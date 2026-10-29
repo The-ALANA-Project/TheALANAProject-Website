@@ -11,7 +11,7 @@ import { optimism } from "npm:viem@2.52.0/chains";
 
 const ROUTE_PREFIX = "/alana-website-guardian";
 const GUARDIAN_CONTRACT = "0x1093a86C1dcB9F8346ce7657C766802326598D8d";
-const SESSION_MINUTES = 15;
+const SESSION_MINUTES = 30;
 const NONCE_MINUTES = 5;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 

@@ -1,6 +1,8 @@
 import { projectId, publicAnonKey } from '../../../utils/supabase/info';
 
 const BASE = `https://${projectId}.supabase.co/functions/v1/alana-website-guardian`;
+const publishableKey =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || publicAnonKey;
 
 interface StoredGuardianSession {
   token: string;
@@ -20,8 +22,8 @@ async function apiRequest<T>(
   guardian = false,
 ): Promise<T> {
   const headers = new Headers(init.headers);
-  headers.set('apikey', publicAnonKey);
-  headers.set('Authorization', `Bearer ${publicAnonKey}`);
+  headers.set('apikey', publishableKey);
+  headers.set('Authorization', `Bearer ${publishableKey}`);
 
   if (init.body && !(init.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
