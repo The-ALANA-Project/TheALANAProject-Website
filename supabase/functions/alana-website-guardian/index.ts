@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { withSupabase } from "jsr:@supabase/server@^1";
 import { Hono } from "npm:hono";
 import { logger } from "npm:hono/logger";
 import { createClient } from "jsr:@supabase/supabase-js@2.49.8";
@@ -745,5 +746,8 @@ app.post(`${ROUTE_PREFIX}/admin/member-image`, async (c) => {
 });
 
 export default {
-  fetch: app.fetch,
+  fetch: withSupabase(
+    { auth: "none", cors: "disabled" },
+    async (request) => app.fetch(request),
+  ),
 };
