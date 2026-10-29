@@ -1,0 +1,10 @@
+{
+  "description": "Create customizable template websites for community projects, preserving brand identity and structure for easy duplication and product expansion.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
