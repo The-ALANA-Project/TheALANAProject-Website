@@ -2,7 +2,14 @@ import { Footer } from '../components/Footer';
 import { Seo } from '../components/Seo';
 import { siteConfig } from '../config/site';
 
-const assets = [
+interface PressAsset {
+  name: string;
+  description: string;
+  available: boolean;
+  chip?: string;
+}
+
+const assets: { category: string; items: PressAsset[] }[] = [
   {
     category: 'Logos',
     items: [
@@ -26,7 +33,7 @@ const assets = [
     items: [
       { name: 'Press Images (ZIP)', description: 'High-resolution photos approved for editorial use.', available: false },
       { name: 'Team Headshots', description: 'Individual high-res photos of core team members.', available: false },
-      { name: 'Product Screenshots', description: 'Current screenshots of the ALANA Calculator.', available: false },
+      { name: 'Product Screenshots', description: 'Current screenshots of the ALANA ecosystem products.', available: false },
     ],
   },
 ];

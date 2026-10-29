@@ -76,8 +76,8 @@ const ONBOARDING_QUIZZES = [
     title: 'Cybersecurity Essentials',
     description: 'Build practical habits for protecting your identity, accounts, devices, and digital assets.',
     badgeImage: 'https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeieqaqwbzo5z6ykqtjwd5bdcjfgipkv5pzvvseqgywyo6sr3dczioe',
-    mintUrl: null,
-    available: false,
+    mintUrl: 'https://app.unlock-protocol.com/checkout?id=e031b0bf-17b5-489a-aa55-5499036c61e4',
+    available: true,
   },
   {
     id: 'ai',
@@ -85,8 +85,8 @@ const ONBOARDING_QUIZZES = [
     title: 'AI Tech Essentials',
     description: 'Learn how artificial intelligence works, where it creates value, and how to use it responsibly.',
     badgeImage: 'https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeifki7xtenjii6mfrluuli6e5skum2okqp7cgmjkz74kup3zodut3y',
-    mintUrl: null,
-    available: false,
+    mintUrl: 'https://app.unlock-protocol.com/checkout?id=2757ca19-06b7-455e-9419-48ab740254bb',
+    available: true,
   },
 ] as const;
 
@@ -318,7 +318,7 @@ export function KnowledgeHubPage() {
     const finalComposer = new EffectComposer(renderer);
     finalComposer.addPass(new RenderPass(scene, camera));
     finalComposer.addPass(new ShaderPass(mixMaterial, 'baseTexture'));
-    finalComposer.addPass(new FilmPass(0.4, 0.04, 648, false));
+    finalComposer.addPass(new FilmPass(0.4, false));
     finalComposer.addPass(new ShaderPass(lensMaterial));
 
     // Mouse tracking

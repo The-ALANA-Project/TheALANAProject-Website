@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Footer } from '../components/Footer';
 import { Seo } from '../components/Seo';
+import { BlogLoadingBar } from '../components/BlogLoadingBar';
 import {
   fetchBlogPosts,
   lookupMemberAvatar,
@@ -79,21 +80,21 @@ export function BlogArticlePage() {
           publishedTime={post.pubDate}
         />
       )}
-      <div className="min-h-[calc(100vh-160px)] px-8 md:px-16 max-w-6xl mx-auto py-12">
+      <div className="relative min-h-[calc(100vh-160px)] w-full px-8 md:px-16 max-w-6xl mx-auto py-12">
         {/* Back button */}
-        <button
-          onClick={() => navigate('/blog')}
-          className="inline-flex items-center justify-center px-6 h-11 font-sans text-sm font-medium bg-accent text-[#262424] backdrop-blur-sm border border-accent shadow-lg rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] transition-all duration-300 hover:bg-[#262424] hover:text-accent hover:border-accent mb-10"
-        >
-          Back to Blog
-        </button>
+        {!loading && (
+          <button
+            onClick={() => navigate('/blog')}
+            className="inline-flex items-center justify-center px-6 h-11 font-sans text-sm font-medium bg-accent text-[#262424] backdrop-blur-sm border border-accent shadow-lg rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] transition-all duration-300 hover:bg-[#262424] hover:text-accent hover:border-accent mb-10"
+          >
+            Back to Blog
+          </button>
+        )}
 
         {loading && (
-          <div className="animate-pulse space-y-6">
-            <div className="w-full bg-muted rounded-tl-[4px] rounded-br-[24px]" style={{ height: '400px' }} />
-            <div className="space-y-3">
-              <div className="h-8 bg-muted rounded w-3/4" />
-              <div className="h-4 bg-muted rounded w-1/3" />
+          <div className="absolute inset-0 flex items-center justify-center px-8 md:px-16">
+            <div className="w-full max-w-md">
+            <BlogLoadingBar label="Opening article" />
             </div>
           </div>
         )}
@@ -136,9 +137,9 @@ export function BlogArticlePage() {
             )}
 
             {/* Title */}
-            <h2 className="font-sans font-bold text-3xl md:text-4xl leading-tight mb-6 text-left">
+            <h1 className="blog-article-title font-sans font-bold leading-tight mb-6 text-left">
               {post.title}
-            </h2>
+            </h1>
 
             {/* Author / meta strip */}
             <div className="flex items-center gap-3 mb-10 pb-8 border-b border-foreground">
@@ -153,6 +154,33 @@ export function BlogArticlePage() {
 
             {/* Article body */}
             <style>{`
+              .blog-article-title {
+                font-size: 28px !important;
+                line-height: 1.2 !important;
+              }
+              .article-body h2 {
+                font-size: 24px !important;
+                line-height: 1.3 !important;
+              }
+              .article-body h3 {
+                font-size: 20px !important;
+                line-height: 1.4 !important;
+              }
+              .article-body h4 {
+                font-size: 18px !important;
+                line-height: 1.4 !important;
+              }
+              @media (min-width: 768px) {
+                .blog-article-title {
+                  font-size: 36px !important;
+                }
+                .article-body h2 {
+                  font-size: 26px !important;
+                }
+                .article-body h3 {
+                  font-size: 22px !important;
+                }
+              }
               .article-body p:empty { display: none; }
               .article-body figure,
               .article-body figure *,

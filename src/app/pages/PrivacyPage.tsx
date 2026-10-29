@@ -9,11 +9,11 @@ const sections = [
   },
   {
     title: '2. Information We Collect',
-    body: `We collect information you provide directly (such as quest submissions and contribution data), information collected automatically (such as browser type, IP address, and pages visited via analytics tools), and on-chain information derived from your connected wallet address (public blockchain data).`,
+    body: `We process information you provide directly, public community profile information managed by authorised Guardians, and public on-chain information associated with a wallet you choose to connect. Knowledge Challenge progress is stored locally in your browser and is not synced to an ALANA account.`,
   },
   {
     title: '3. How We Use Your Information',
-    body: `We use the information we collect to: operate and improve the Service; verify NFT-gated access; process and display quest contributions; communicate with you about the project; and analyse usage patterns to improve user experience. We do not sell your personal information to third parties.`,
+    body: `We use information to operate and improve the website, display approved community content, verify NFT-gated Guardian access, and communicate with you when requested. We do not sell your personal information to third parties.`,
   },
   {
     title: '4. Wallet Data',
@@ -21,7 +21,7 @@ const sections = [
   },
   {
     title: '5. Supabase & Data Storage',
-    body: `Quest submission data, including text contributions and associated metadata, is stored securely in our Supabase database. Access is restricted to authorised team members and Guardian-role users within the platform.`,
+    body: `Public website content—including community directory entries, curated resources, Whitepaper chapters, webinars, and content settings—is stored in Supabase. Some content is publicly readable by design. Administrative access is intended for authorised Guardian-role users.`,
   },
   {
     title: '6. Cookies & Analytics',
@@ -33,7 +33,7 @@ const sections = [
   },
   {
     title: '8. Data Retention',
-    body: `We retain your data for as long as necessary to provide the Service. Quest submission records may be retained indefinitely as part of the public contribution history. You may request deletion of personal data not required for on-chain operations by contacting us.`,
+    body: `We retain managed website content for as long as it remains relevant to the Service. You may request correction or deletion of personal information in a community profile by contacting us. Browser-stored challenge progress can be removed by clearing this site's data.`,
   },
   {
     title: '9. Your Rights',

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router';
 import { Footer } from '../components/Footer';
 import { Seo } from '../components/Seo';
+import { Button } from '../components/ui/button';
 import { siteConfig } from '../config/site';
 import { fetchBlogPosts, BlogPost, getAuthorInitials, formatPubDate } from '../services/blogService';
 import { fetchTickerItems, fetchStoryFlags, fetchCommunityMembers, fetchCommunityTools, type CommunityMember, type CommunityTool } from '../services/communityAdminService';
@@ -19,30 +20,9 @@ interface Member {
   websiteUrl?: string;
 }
 
-// ── Placeholder data ───────────────────────────────────────────────────────────
-const members: Member[] = [
-  { name: 'Stella Achenbach', role: 'Nucleus Guardian',   team: 'Core',      skills: ['Strategy', 'Community', 'Creative Direction'], active: true,  bio: 'Stella is a Design Alchemist working across 3D creation, game design, and decentralized systems. She builds tools that help creators thrive. As the founder of The ALANA Project, she collaborates to educate fellow creators about new technologies and to build useful tools, products, and platforms for creators.' },
-  { name: 'Nils Otter',       role: 'Nucleus Guardian',   team: 'Core',      skills: ['Product', 'Engineering', 'Governance'],        active: true,  bio: 'Placeholder bio — Nils shapes the technical infrastructure behind the ALANA contributor ecosystem, bridging engineering and community governance to keep the platform running and evolving.' },
-  { name: 'Kerry Allen',      role: 'Nucleus Specialist', team: 'Brand',     skills: ['Design', 'Visual Communication', 'Branding'], active: true,  bio: 'Placeholder bio — Kerry is a brand and design professional who brings deep experience in creative direction and visual communication to the ALANA Project.' },
-  { name: 'Kirsty Milloy',    role: 'Contributor',        team: 'Education', skills: ['Education', 'Writing', 'Mentorship'],          active: true,  bio: 'Placeholder bio — Kirsty is an educator and community connector who helps new members find their footing in Web3 through guides, workshops, and honest conversation.' },
-  { name: 'Placeholder A',    role: 'Developer',          team: 'Tech',      skills: ['Solidity', 'React', 'Web3'],                   active: false, bio: 'Placeholder bio — this member contributed to the technical foundations of ALANA and helped build early smart contract infrastructure for the ecosystem.' },
-  { name: 'Placeholder B',    role: 'Designer',           team: 'Brand',     skills: ['UI/UX', 'Figma', 'Motion'],                   active: true,  bio: 'Placeholder bio — a product and visual designer focused on making the ALANA contributor experience feel intuitive, beautiful, and accessible to all.' },
-  { name: 'Placeholder C',    role: 'Writer',             team: 'Content',   skills: ['Copywriting', 'Blog', 'Social Media'],         active: false, bio: 'Placeholder bio — a storyteller who crafted early community narratives and blog content that helped define the voice and tone of The ALANA Project.' },
-  { name: 'Placeholder D',    role: 'Researcher',         team: 'Education', skills: ['Research', 'DeFi', 'Analytics'],               active: true,  bio: 'Placeholder bio — a DeFi researcher who translates complex onchain dynamics into approachable educational content for the broader ALANA community.' },
-];
-
 const communityQuotes = [
   { quote: "It's a joy to be involved with this project!", name: 'Kerry Allen', href: 'https://www.linkedin.com/in/kerry-allen-greyscale-group/' },
   { quote: "A rare community where personal and professional growth happen naturally, supported by people that value both innovation and wellbeing.", name: 'Daniele Nanni', href: 'https://www.linkedin.com/in/daniele-nanni-90/' },
-];
-
-const tickerItems = [
-  'New community call scheduled for next Thursday — check Telegram for details',
-  'Community milestone: 7,500 members and counting',
-  'New blog post: "Building in Web3 Without Losing Your Mind" by Stella Achenbach',
-  'Governance vote open: New contributor onboarding framework — cast your vote by Friday',
-  'Quest system update: three new learning tracks now available',
-  'Community showcase: latest design sprint just wrapped — see the results on Telegram',
 ];
 
 const CONTRIBUTION_CALCULATOR_IMAGE_URL = 'https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeid5op27w5udlle4b4c6fcclicyiuaye4d3tpfhsteus7wbwdxtmbi';
@@ -178,24 +158,33 @@ function MemberCard({ member }: { member: Member }) {
   const initials = member.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   return (
     <div className="group border border-foreground rounded-[8px] p-5 flex flex-col gap-4 bg-background">
-      <div className="flex items-start gap-4">
+      <div
+        className={`aspect-square w-full overflow-hidden rounded-[4px] ${
+          member.active
+            ? 'ring-2 ring-accent shadow-lg shadow-accent/60'
+            : 'border border-foreground/20'
+        }`}
+      >
         {member.imageUrl ? (
-          <img src={member.imageUrl} alt={member.name} className="w-12 h-12 rounded-[2px] object-cover flex-shrink-0" />
+          <img
+            src={member.imageUrl}
+            alt={member.name}
+            className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]"
+            loading="lazy"
+          />
         ) : (
-          <div className="w-12 h-12 rounded-[2px] bg-accent flex items-center justify-center flex-shrink-0">
-            <span className="font-mono text-xs font-medium text-[#262424]">{initials}</span>
+          <div className="flex h-full w-full items-center justify-center bg-accent/30">
+            <span className="font-mono text-3xl font-medium text-foreground">{initials}</span>
           </div>
         )}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-mono text-sm font-medium">{member.name}</span>
-            <span className={`text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-sm ${member.active ? 'bg-accent text-[#262424]' : 'bg-muted text-muted-foreground'}`}>
-              {member.active ? 'Active' : 'Inactive'}
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground font-bold mt-0.5">{member.role}</p>
-          <p className="text-xs text-muted-foreground">{member.team}</p>
+      </div>
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-mono text-sm font-medium">{member.name}</span>
+          {member.active && <span className="sr-only">Active member</span>}
         </div>
+        <p className="text-xs text-muted-foreground font-bold mt-0.5">{member.role}</p>
+        <p className="text-xs text-muted-foreground">{member.team}</p>
       </div>
       {member.bio && (
         <p className="text-xs text-muted-foreground leading-relaxed">{member.bio}</p>
@@ -280,6 +269,7 @@ export function CommunityPage() {
   const [quoteVisible, setQuoteVisible] = useState(true);
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [visibleMemberCount, setVisibleMemberCount] = useState(3);
   const [filterOpen, setFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
@@ -319,7 +309,7 @@ export function CommunityPage() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  // Fetch live members from Guardian Panel; fall back to hardcoded list if empty
+  // Fetch live members managed through the Guardian Panel.
   useEffect(() => {
     fetchCommunityMembers().then(fetched => {
       const visible = fetched.filter(m => m.visible);
@@ -355,20 +345,30 @@ export function CommunityPage() {
     }).catch(() => {});
   }, []);
 
-  // Use live members from Supabase if available, normalising snake_case fields
-  const resolvedMembers: Member[] = liveMembers
-    ? liveMembers.map(m => ({
-        name: m.name,
-        role: m.role,
-        team: m.team,
-        skills: m.skills,
-        active: m.active,
-        bio: m.bio,
-        imageUrl: m.image_url || undefined,
-        socialUrl: m.social_url || undefined,
-        websiteUrl: m.website_url || undefined,
-      }))
-    : members;
+  // Normalise live members, then shuffle once per fetch so each page load starts
+  // with a different cross-section while remaining stable during interaction.
+  const resolvedMembers = useMemo<Member[]>(() => {
+    const members = liveMembers
+      ? liveMembers.map(m => ({
+          name: m.name,
+          role: m.role,
+          team: m.team,
+          skills: m.skills,
+          active: m.active,
+          bio: m.bio,
+          imageUrl: m.image_url || undefined,
+          socialUrl: m.social_url || undefined,
+          websiteUrl: m.website_url || undefined,
+        }))
+      : [];
+
+    for (let i = members.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [members[i], members[j]] = [members[j], members[i]];
+    }
+
+    return members;
+  }, [liveMembers]);
 
   // Filter members
   const filteredMembers = resolvedMembers.filter(m => {
@@ -384,10 +384,13 @@ export function CommunityPage() {
       (activeFilter === 'inactive' && !m.active);
     return matchesSearch && matchesStatus;
   });
+  const visibleMembers = filteredMembers.slice(0, visibleMemberCount);
 
-  // Ticker: use live managed items if available, else fall back to hardcoded
-  const resolvedTicker = liveTickerItems.length > 0 ? liveTickerItems : tickerItems;
-  const allTicker = [...resolvedTicker, ...resolvedTicker];
+  useEffect(() => {
+    setVisibleMemberCount(3);
+  }, [search, activeFilter]);
+
+  const allTicker = [...liveTickerItems, ...liveTickerItems];
 
   // Derive live tool lists, falling back to static data when Supabase returns nothing
   const liveAlanaTools = liveTools.filter(t => t.category === 'alana');
@@ -529,29 +532,30 @@ export function CommunityPage() {
         `}</style>
       </section>
 
-      {/* ── Gossip Ticker ─────────────────────────────────────────────────── */}
-      <div className="w-full bg-foreground overflow-hidden py-3 select-none">
-        <div
-          className="flex gap-12 whitespace-nowrap"
-          style={{
-            animation: 'ticker-scroll 40s linear infinite',
-            width: 'max-content',
-          }}
-        >
-          {allTicker.map((item, i) => (
-            <span key={i} className="font-mono text-[11px] uppercase tracking-[0.2em] text-background/60 flex items-center gap-12">
-              {item}
-              <span className="text-accent text-base">✦</span>
-            </span>
-          ))}
+      {allTicker.length > 0 && (
+        <div className="w-full bg-foreground overflow-hidden py-3 select-none">
+          <div
+            className="flex gap-12 whitespace-nowrap"
+            style={{
+              animation: 'ticker-scroll 40s linear infinite',
+              width: 'max-content',
+            }}
+          >
+            {allTicker.map((item, i) => (
+              <span key={i} className="font-mono text-[11px] uppercase tracking-[0.2em] text-background/60 flex items-center gap-12">
+                {item}
+                <span className="text-accent text-base">✦</span>
+              </span>
+            ))}
+          </div>
+          <style>{`
+            @keyframes ticker-scroll {
+              0%   { transform: translateX(0); }
+              100% { transform: translateX(-50%); }
+            }
+          `}</style>
         </div>
-        <style>{`
-          @keyframes ticker-scroll {
-            0%   { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-          }
-        `}</style>
-      </div>
+      )}
 
       {/* ── Event Photo Strip ─────────────────────────────────────────────── */}
       <section className="w-full bg-background pb-4" style={{ overflowX: 'clip' }}>
@@ -667,9 +671,23 @@ export function CommunityPage() {
           </div>
 
           {filteredMembers.length > 0 ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredMembers.map((m, i) => <MemberCard key={i} member={m} />)}
-            </div>
+            <>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {visibleMembers.map((m, i) => <MemberCard key={i} member={m} />)}
+              </div>
+              {visibleMemberCount < filteredMembers.length && (
+                <div className="flex justify-end pt-8">
+                  <Button
+                    type="button"
+                    size="lg"
+                    onClick={() => setVisibleMemberCount(count => count + 3)}
+                    className="h-11 rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] border border-accent bg-accent px-6 text-accent-foreground shadow-lg backdrop-blur-sm hover:border-accent hover:bg-foreground hover:text-accent"
+                  >
+                    Load more members
+                  </Button>
+                </div>
+              )}
+            </>
           ) : (
             <p className="font-mono text-sm text-muted-foreground py-12 text-center">No members match your search.</p>
           )}
@@ -739,7 +757,7 @@ export function CommunityPage() {
         <div className="mb-12">
           <div className="w-full max-w-6xl mx-auto px-8 md:px-16 mb-4">
             <div className="flex items-center gap-4">
-              <span className="font-sans text-[18px] font-medium text-foreground whitespace-nowrap">How we organize</span>
+              <span className="font-sans text-[18px] font-medium text-foreground whitespace-nowrap">How we work</span>
               <div className="flex-1 h-px bg-foreground/10" />
             </div>
           </div>
@@ -751,7 +769,7 @@ export function CommunityPage() {
               {resolvedStack.map(tool => (
                 <a
                   key={tool.name}
-                  href={tool.url}
+                  href={tool.url ?? undefined}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group flex items-center gap-2 px-3.5 py-2 border border-foreground/20 rounded-[4px] hover:border-foreground transition-colors whitespace-nowrap flex-shrink-0"

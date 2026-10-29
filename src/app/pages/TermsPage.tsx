@@ -13,19 +13,19 @@ const sections = [
   },
   {
     title: '3. NFT-Gated Access',
-    body: `Certain features of the Service require ownership of a Nucleus Guardian, Specialist, or Apprentice NFT on the Optimism network. Access to these features is determined solely by on-chain verification of wallet-held assets. The ALANA Project makes no guarantees regarding the availability, transferability, or value of these NFTs.`,
+    body: `Certain administrative features require ownership of a Nucleus Guardian NFT on the Optimism network. The interface checks wallet-held assets to determine role visibility. The ALANA Project makes no guarantees regarding the availability, transferability, or value of these NFTs.`,
   },
   {
     title: '4. $ALANA Token',
     body: `$ALANA tokens are community reward tokens distributed within The ALANA Project ecosystem. They do not constitute securities, investment products, or any form of financial instrument. Token values may fluctuate and The ALANA Project makes no representations as to their future value.`,
   },
   {
-    title: '5. User Contributions',
-    body: `By submitting quest contributions through the Service, you grant The ALANA Project a non-exclusive, royalty-free licence to display and reference your contributions within the platform. You retain ownership of your original work and are responsible for ensuring your contributions do not infringe the rights of any third party.`,
+    title: '5. External Services and Badge Mints',
+    body: `The website links to third-party services, including external product websites and NFT badge checkout pages. Transactions or interactions on those services are governed by their own terms and privacy policies. You are responsible for reviewing transaction details and wallet prompts before confirming them.`,
   },
   {
     title: '6. Prohibited Conduct',
-    body: `You agree not to: (a) use the Service for any unlawful purpose; (b) attempt to circumvent NFT-gating or access controls; (c) submit false, misleading, or fraudulent quest contributions; (d) interfere with the integrity of the platform or its underlying smart contracts; (e) harass, abuse, or harm other community members.`,
+    body: `You agree not to: (a) use the Service for any unlawful purpose; (b) attempt to circumvent NFT-gating or access controls; (c) submit false, misleading, or harmful content through administrative tools; (d) interfere with the integrity of the website or connected services; or (e) harass, abuse, or harm other community members.`,
   },
   {
     title: '7. Disclaimers',

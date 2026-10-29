@@ -1,7 +1,15 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useAccount, useReadContracts } from 'wagmi';
+import { useAccount, useReadContracts, useSignMessage } from 'wagmi';
 import { optimism } from '@reown/appkit/networks';
 import { NFT_CONTRACTS, unlockKeyAbi } from '../config/web3';
+import {
+  clearStoredGuardianSession,
+  getStoredGuardianSession,
+  requestGuardianNonce,
+  storeGuardianSession,
+  validateGuardianSession,
+  verifyGuardianSignature,
+} from '../services/guardianApi';
 
 export type UserRole = 'visitor' | 'apprentice' | 'specialist' | 'guardian';
 
@@ -11,6 +19,10 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isConnected: boolean;
   isLoading: boolean;
+  guardianSessionStatus: 'idle' | 'checking' | 'authorizing' | 'authorized' | 'error';
+  guardianSessionError: string | null;
+  authorizeGuardian: () => Promise<void>;
+  clearGuardianAuthorization: () => void;
   hasRole: (requiredRole: UserRole | UserRole[]) => boolean;
   // Dev-only override: set non-null to force a role, null to use on-chain result.
   devRoleOverride: UserRole | null;
@@ -28,9 +40,13 @@ const DEV_MOCK_ADDRESS = '0x1234567890123456789012345678901234567890' as `0x${st
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { address: walletAddress, isConnected: walletConnected } = useAccount();
+  const { signMessageAsync } = useSignMessage();
 
   const [devRoleOverride, setDevRoleOverrideState] = useState<UserRole | null>(null);
   const [devModeEnabled, setDevModeEnabledState] = useState(false);
+  const [guardianSessionStatus, setGuardianSessionStatus] =
+    useState<AuthContextType['guardianSessionStatus']>('idle');
+  const [guardianSessionError, setGuardianSessionError] = useState<string | null>(null);
 
   // Use dev mode values if enabled in dev environment
   const address = (import.meta.env.DEV && devModeEnabled) ? DEV_MOCK_ADDRESS : walletAddress;
@@ -114,6 +130,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return hierarchy[role] >= hierarchy[requiredRole];
   };
 
+  const clearGuardianAuthorization = () => {
+    clearStoredGuardianSession();
+    setGuardianSessionStatus('idle');
+    setGuardianSessionError(null);
+  };
+
+  useEffect(() => {
+    const stored = getStoredGuardianSession();
+    if (!address || !stored || stored.walletAddress.toLowerCase() !== address.toLowerCase()) {
+      if (stored) clearStoredGuardianSession();
+      setGuardianSessionStatus('idle');
+      return;
+    }
+
+    let cancelled = false;
+    setGuardianSessionStatus('checking');
+    validateGuardianSession()
+      .then(() => {
+        if (!cancelled) setGuardianSessionStatus('authorized');
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          clearStoredGuardianSession();
+          setGuardianSessionStatus('error');
+          setGuardianSessionError(error instanceof Error ? error.message : 'Guardian session expired');
+        }
+      });
+    return () => { cancelled = true; };
+  }, [address]);
+
+  useEffect(() => {
+    const handleSessionCleared = () => {
+      setGuardianSessionStatus('idle');
+      setGuardianSessionError('Guardian authorization expired. Please sign in again.');
+    };
+    window.addEventListener('alana-guardian-session-cleared', handleSessionCleared);
+    return () => window.removeEventListener('alana-guardian-session-cleared', handleSessionCleared);
+  }, []);
+
+  const authorizeGuardian = async () => {
+    if (!address || onChainRole !== 'guardian') {
+      throw new Error('An active Nucleus Guardian membership is required');
+    }
+
+    setGuardianSessionStatus('authorizing');
+    setGuardianSessionError(null);
+    try {
+      const { message } = await requestGuardianNonce(address);
+      const signature = await signMessageAsync({ message });
+      const session = await verifyGuardianSignature({
+        walletAddress: address,
+        message,
+        signature,
+      });
+      storeGuardianSession(session);
+      setGuardianSessionStatus('authorized');
+    } catch (error) {
+      clearStoredGuardianSession();
+      const message = error instanceof Error ? error.message : 'Guardian authorization failed';
+      setGuardianSessionStatus('error');
+      setGuardianSessionError(message);
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -122,6 +203,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated,
         isConnected,
         isLoading,
+        guardianSessionStatus,
+        guardianSessionError,
+        authorizeGuardian,
+        clearGuardianAuthorization,
         hasRole,
         devRoleOverride,
         setDevRoleOverride,

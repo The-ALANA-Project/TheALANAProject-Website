@@ -1,26 +1,21 @@
 import { projectId, publicAnonKey } from '../../../utils/supabase/info';
+import { fetchPublicResource } from './guardianApi';
 
 const BASE = `https://${projectId}.supabase.co/functions/v1/make-server-44fc6238`;
 const PARAGRAPH_RSS = 'https://api.paragraph.com/blogs/rss/@the-alana-project';
-const PARAGRAPH_API_KEY = 'para_ixWvNrN89ZobmhGi4rh85eN8lTB3oisXyKSjUXmjtwI';
-const REST = `https://${projectId}.supabase.co/rest/v1`;
 
 // Fetches name→image_url map from community_members table, cached per session.
 let memberAvatarCache: Map<string, string> | null = null;
 export async function fetchMemberAvatarMap(): Promise<Map<string, string>> {
   if (memberAvatarCache) return memberAvatarCache;
   try {
-    const res = await fetch(
-      `${REST}/community_members?select=name,image_url&visible=eq.true`,
-      { headers: { apikey: publicAnonKey, Authorization: `Bearer ${publicAnonKey}` } },
+    const rows = await fetchPublicResource<{ name: string; image_url: string | null }>(
+      'member-avatars',
     );
-    if (res.ok) {
-      const rows = (await res.json()) as { name: string; image_url: string | null }[];
-      memberAvatarCache = new Map(
-        rows.filter((r) => r.name && r.image_url).map((r) => [r.name.trim().toLowerCase(), r.image_url!]),
-      );
-      return memberAvatarCache;
-    }
+    memberAvatarCache = new Map(
+      rows.filter((r) => r.name && r.image_url).map((r) => [r.name.trim().toLowerCase(), r.image_url!]),
+    );
+    return memberAvatarCache;
   } catch { /* non-critical */ }
   memberAvatarCache = new Map();
   return memberAvatarCache;
@@ -332,7 +327,7 @@ async function fetchPostsFromParagraphApi(apiKey?: string): Promise<BlogPost[] |
 
 // Paragraph API → RSS fallback.
 export async function fetchAllBlogPosts(): Promise<BlogPost[]> {
-  const fromApi = await fetchPostsFromParagraphApi(PARAGRAPH_API_KEY);
+  const fromApi = await fetchPostsFromParagraphApi();
   if (fromApi && fromApi.length > 0) return fromApi;
   return fetchBlogPosts(true);
 }

@@ -1,21 +1,13 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Check, X } from 'lucide-react';
+import { AI_TECHNOLOGY_STEPS } from '../content/aiTechnologyChallenge';
+import { CYBERSECURITY_STEPS } from '../content/cybersecurityChallenge';
+import type {
+  KnowledgeChallengeStep,
+  QuizQuestion,
+} from '../content/knowledgeChallengeTypes';
 
-interface QuizQuestion {
-  question: string;
-  options: string[];
-  correctAnswer: string | string[];
-  explainer: string;
-  isMultiSelect?: boolean;
-}
-
-interface Step {
-  id: number;
-  label: string;
-  questions: QuizQuestion[];
-}
-
-const STEPS: Step[] = [
+const WEB3_STEPS: KnowledgeChallengeStep[] = [
   {
     id: 1,
     label: 'Web3 Basics',
@@ -234,6 +226,21 @@ const STEPS: Step[] = [
   },
 ];
 
+const CHALLENGE_STEPS: Record<string, KnowledgeChallengeStep[]> = {
+  web3: WEB3_STEPS,
+  cybersecurity: CYBERSECURITY_STEPS,
+  ai: AI_TECHNOLOGY_STEPS,
+};
+
+const COMPLETION_COPY: Record<string, string> = {
+  web3:
+    'You now have solid beginner knowledge in Web3, wallets, crypto, NFTs, and DeFi. Your blockchain-verified badge will be available to mint below.',
+  cybersecurity:
+    'You now have solid beginner knowledge in digital threats, authentication, privacy, device security, and incident recovery. Your blockchain-verified badge will be available to mint below.',
+  ai:
+    'You now have solid beginner knowledge in AI fundamentals, machine learning, ethics, applications, and responsible use. Your blockchain-verified badge will be available to mint below.',
+};
+
 function isAnswerCorrect(q: QuizQuestion, selected: string[]): boolean {
   if (q.isMultiSelect) {
     const correct = q.correctAnswer as string[];
@@ -242,15 +249,23 @@ function isAnswerCorrect(q: QuizQuestion, selected: string[]): boolean {
   return selected[0] === q.correctAnswer;
 }
 
-function getStepScore(stepId: number, answers: Record<number, string[]>): number {
-  const step = STEPS.find(s => s.id === stepId)!;
+function getStepScore(
+  steps: KnowledgeChallengeStep[],
+  stepId: number,
+  answers: Record<number, string[]>,
+): number {
+  const step = steps.find(s => s.id === stepId)!;
   return step.questions.reduce((n, q, qi) => {
     return n + (isAnswerCorrect(q, answers[qi] ?? []) ? 1 : 0);
   }, 0);
 }
 
-function evaluateStep(stepId: number, answers: Record<number, string[]>) {
-  const step = STEPS.find(s => s.id === stepId)!;
+function evaluateStep(
+  steps: KnowledgeChallengeStep[],
+  stepId: number,
+  answers: Record<number, string[]>,
+) {
+  const step = steps.find(s => s.id === stepId)!;
   let falseSelections = 0;
   let missedCorrectAnswers = 0;
 
@@ -265,7 +280,7 @@ function evaluateStep(stepId: number, answers: Record<number, string[]>) {
   });
 
   return {
-    score: getStepScore(stepId, answers),
+    score: getStepScore(steps, stepId, answers),
     passed: falseSelections <= 1 && missedCorrectAnswers === 0,
   };
 }
@@ -280,16 +295,21 @@ interface StoredQuizProgress {
   revealed: RevealedSteps;
 }
 
-const createEmptyAnswers = (): StepAnswers => ({ 1: {}, 2: {}, 3: {}, 4: {}, 5: {} });
-const createEmptyRevealed = (): RevealedSteps => ({ 1: false, 2: false, 3: false, 4: false, 5: false });
+const createEmptyAnswers = (steps: KnowledgeChallengeStep[]): StepAnswers =>
+  Object.fromEntries(steps.map(step => [step.id, {}]));
+const createEmptyRevealed = (steps: KnowledgeChallengeStep[]): RevealedSteps =>
+  Object.fromEntries(steps.map(step => [step.id, false]));
 const progressStorageKey = (challengeId: string) => `alana_knowledge_challenge_${challengeId}_v1`;
 
-function loadQuizProgress(challengeId: string): StoredQuizProgress {
+function loadQuizProgress(
+  challengeId: string,
+  steps: KnowledgeChallengeStep[],
+): StoredQuizProgress {
   const fallback: StoredQuizProgress = {
-    activeStep: 1,
+    activeStep: steps[0].id,
     completedSteps: [],
-    stepAnswers: createEmptyAnswers(),
-    revealed: createEmptyRevealed(),
+    stepAnswers: createEmptyAnswers(steps),
+    revealed: createEmptyRevealed(steps),
   };
 
   try {
@@ -297,19 +317,19 @@ function loadQuizProgress(challengeId: string): StoredQuizProgress {
     if (!stored) return fallback;
 
     const parsed = JSON.parse(stored) as Partial<StoredQuizProgress>;
-    const validStepIds = new Set(STEPS.map(step => step.id));
+    const validStepIds = new Set(steps.map(step => step.id));
     const completedSteps = Array.isArray(parsed.completedSteps)
       ? parsed.completedSteps.filter(id => typeof id === 'number' && validStepIds.has(id))
       : [];
     const activeStep = typeof parsed.activeStep === 'number' && validStepIds.has(parsed.activeStep)
       ? parsed.activeStep
-      : 1;
+      : steps[0].id;
 
     return {
       activeStep,
       completedSteps,
-      stepAnswers: { ...createEmptyAnswers(), ...(parsed.stepAnswers ?? {}) },
-      revealed: { ...createEmptyRevealed(), ...(parsed.revealed ?? {}) },
+      stepAnswers: { ...createEmptyAnswers(steps), ...(parsed.stepAnswers ?? {}) },
+      revealed: { ...createEmptyRevealed(steps), ...(parsed.revealed ?? {}) },
     };
   } catch {
     return fallback;
@@ -327,7 +347,12 @@ export function LearnerQuiz({
   challengeTitle?: string;
   mintUrl?: string | null;
 }) {
-  const initialProgress = useMemo(() => loadQuizProgress(storageKey), [storageKey]);
+  const steps = CHALLENGE_STEPS[storageKey] ?? WEB3_STEPS;
+  const completionCopy = COMPLETION_COPY[storageKey] ?? COMPLETION_COPY.web3;
+  const initialProgress = useMemo(
+    () => loadQuizProgress(storageKey, steps),
+    [storageKey, steps],
+  );
   const quizTopRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
   const stickActionsToBottomRef = useRef(false);
@@ -341,7 +366,7 @@ export function LearnerQuiz({
 
   const shuffled = useMemo(() => {
     const out: Record<string, string[]> = {};
-    STEPS.forEach(step => {
+    steps.forEach(step => {
       step.questions.forEach((q, qi) => {
         const opts = [...q.options];
         for (let i = opts.length - 1; i > 0; i--) {
@@ -352,7 +377,7 @@ export function LearnerQuiz({
       });
     });
     return out;
-  }, []);
+  }, [steps]);
 
   useEffect(() => {
     const progress: StoredQuizProgress = {
@@ -397,7 +422,7 @@ export function LearnerQuiz({
   }
 
   function handleReveal(stepId: number) {
-    const { passed } = evaluateStep(stepId, stepAnswers[stepId]);
+    const { passed } = evaluateStep(steps, stepId, stepAnswers[stepId]);
     stickActionsToBottomRef.current = true;
     setRevealed(prev => ({ ...prev, [stepId]: true }));
     if (passed) {
@@ -416,13 +441,15 @@ export function LearnerQuiz({
     });
   }
 
-  const allDone = completedSteps.size === 5;
+  const allDone = completedSteps.size === steps.length;
 
-  const step = STEPS.find(s => s.id === activeStep)!;
+  const step = steps.find(s => s.id === activeStep)!;
+  const activeStepIndex = steps.findIndex(candidate => candidate.id === activeStep);
+  const nextStep = steps[activeStepIndex + 1];
   const isRevealed = revealed[activeStep];
   const answers = stepAnswers[activeStep];
   const allAnswered = step.questions.every((_, qi) => (answers[qi] ?? []).length > 0);
-  const evaluation = evaluateStep(activeStep, answers);
+  const evaluation = evaluateStep(steps, activeStep, answers);
   const score = isRevealed ? evaluation.score : 0;
   const passed = evaluation.passed;
 
@@ -443,7 +470,7 @@ export function LearnerQuiz({
               You've completed the {challengeTitle} Challenge!
             </h3>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-              You now have solid beginner knowledge in Web3, wallets, crypto, NFTs, and DeFi. Your blockchain-verified badge will be available to mint below.
+              {completionCopy}
             </p>
           </div>
         </div>
@@ -474,7 +501,7 @@ export function LearnerQuiz({
     <div ref={quizTopRef} className="space-y-6">
       {/* Step tabs */}
       <div className="flex gap-0 border-b border-foreground/10 overflow-x-auto">
-        {STEPS.map(s => {
+        {steps.map(s => {
           const locked = isLocked(s.id);
           const done = completedSteps.has(s.id);
           const active = s.id === activeStep;
@@ -613,21 +640,21 @@ export function LearnerQuiz({
           <>
             <div className="flex items-center gap-3">
               <span className={`font-mono text-xs uppercase tracking-widest ${passed ? 'text-green-600' : 'text-[#EF2795]'}`}>
-                {score}/3 correct — {passed ? 'Step passed!' : 'Not passed'}
+                {score}/{step.questions.length} correct — {passed ? 'Step passed!' : 'Not passed'}
               </span>
             </div>
-            {passed && activeStep < 5 && (
+            {passed && nextStep && (
               <button
                 onClick={() => {
                   scrollQuizToTopRef.current = true;
-                  setActiveStep(activeStep + 1);
+                  setActiveStep(nextStep.id);
                 }}
                 className="ml-auto inline-flex h-11 items-center justify-center rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] border border-accent bg-accent px-6 font-sans text-sm font-medium text-[#262424] shadow-lg backdrop-blur-sm transition-all duration-300 hover:border-accent hover:bg-[#262424] hover:text-accent"
               >
                 Next Step
               </button>
             )}
-            {passed && activeStep === 5 && (
+            {passed && !nextStep && (
               <span className="font-mono text-xs text-accent uppercase tracking-widest">Journey complete ✓</span>
             )}
             {!passed && (

@@ -1,12 +1,4 @@
-import { projectId, publicAnonKey } from '../../../utils/supabase/info';
-
-const REST = `https://${projectId}.supabase.co/rest/v1`;
-
-const baseHeaders = {
-  apikey: publicAnonKey,
-  Authorization: `Bearer ${publicAnonKey}`,
-  'Content-Type': 'application/json',
-};
+import { fetchManagedResource, mutateGuardianResource } from './guardianApi';
 
 export interface BlogCuration {
   guid: string;
@@ -17,50 +9,24 @@ export interface BlogCuration {
 
 export async function fetchCurations(): Promise<BlogCuration[]> {
   try {
-    const res = await fetch(`${REST}/blog_curations?select=guid,visible,display_order,is_hero`, {
-      headers: baseHeaders,
-    });
-    if (!res.ok) return [];
-    return res.json();
+    return await fetchManagedResource<BlogCuration>('curations');
   } catch {
     return [];
   }
 }
 
 export async function upsertCuration(entry: BlogCuration): Promise<void> {
-  await fetch(`${REST}/blog_curations`, {
-    method: 'POST',
-    headers: { ...baseHeaders, Prefer: 'resolution=merge-duplicates,return=minimal' },
-    body: JSON.stringify(entry),
-  });
+  await mutateGuardianResource('upsert', 'curations', entry);
 }
 
 export async function upsertManyCurations(entries: BlogCuration[]): Promise<void> {
   if (entries.length === 0) return;
-  await fetch(`${REST}/blog_curations`, {
-    method: 'POST',
-    headers: { ...baseHeaders, Prefer: 'resolution=merge-duplicates,return=minimal' },
-    body: JSON.stringify(entries),
-  });
+  await mutateGuardianResource('upsertMany', 'curations', entries);
 }
 
 // Clears any existing hero, then pins the given guid.
 export async function setHero(guid: string, currentCurations: BlogCuration[]): Promise<BlogCuration[]> {
-  // Clear existing hero
-  await fetch(`${REST}/blog_curations?is_hero=eq.true`, {
-    method: 'PATCH',
-    headers: { ...baseHeaders, Prefer: 'return=minimal' },
-    body: JSON.stringify({ is_hero: false }),
-  });
-
-  // Set new hero (upsert so it works even if no row exists yet)
-  const existing = currentCurations.find(c => c.guid === guid);
-  await upsertCuration({
-    guid,
-    visible: existing?.visible ?? true,
-    display_order: existing?.display_order ?? null,
-    is_hero: true,
-  });
+  await mutateGuardianResource('setHero', 'curations', { guid });
 
   return currentCurations
     .map(c => ({ ...c, is_hero: false }))
@@ -69,11 +35,7 @@ export async function setHero(guid: string, currentCurations: BlogCuration[]): P
 }
 
 export async function clearHero(): Promise<void> {
-  await fetch(`${REST}/blog_curations?is_hero=eq.true`, {
-    method: 'PATCH',
-    headers: { ...baseHeaders, Prefer: 'return=minimal' },
-    body: JSON.stringify({ is_hero: false }),
-  });
+  await mutateGuardianResource('clearHero', 'curations');
 }
 
 // Applies curation rules to a raw post list:

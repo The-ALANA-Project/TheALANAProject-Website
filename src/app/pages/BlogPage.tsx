@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { Search, RefreshCw } from 'lucide-react';
 import { Footer } from '../components/Footer';
 import { Seo } from '../components/Seo';
+import { BlogLoadingBar } from '../components/BlogLoadingBar';
 import {
   fetchAllBlogPosts,
   getAuthorInitials,
@@ -38,36 +39,6 @@ function AuthorAvatar({
       className={`${dim} ${text} rounded-full bg-accent text-accent-foreground flex items-center justify-center font-mono font-semibold shrink-0`}
     >
       {getAuthorInitials(name)}
-    </div>
-  );
-}
-
-// ── Skeleton ───────────────────────────────────────────────────────────────
-function SkeletonHero() {
-  return (
-    <div className="animate-pulse space-y-5">
-      <div className="w-full bg-muted rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px]" style={{ aspectRatio: '16/7' }} />
-      <div className="space-y-3 max-w-2xl">
-        <div className="h-3 bg-muted rounded w-1/5" />
-        <div className="h-8 bg-muted rounded w-3/4" />
-        <div className="h-4 bg-muted rounded w-full" />
-        <div className="h-4 bg-muted rounded w-5/6" />
-        <div className="h-3 bg-muted rounded w-1/3" />
-      </div>
-    </div>
-  );
-}
-
-function SkeletonCard() {
-  return (
-    <div className="border border-foreground/20 rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] overflow-hidden animate-pulse">
-      <div className="bg-muted w-full" style={{ aspectRatio: '16/9' }} />
-      <div className="p-5 space-y-3">
-        <div className="h-3 bg-muted rounded w-1/4" />
-        <div className="h-4 bg-muted rounded w-3/4" />
-        <div className="h-3 bg-muted rounded w-full" />
-        <div className="h-3 bg-muted rounded w-5/6" />
-      </div>
     </div>
   );
 }
@@ -282,16 +253,12 @@ export function BlogPage() {
       )}
 
       {/* Constrained content */}
-      <div className={`min-h-[calc(100vh-160px)] px-8 md:px-16 max-w-6xl mx-auto pb-20 ${showHeroImage ? 'pt-10' : 'pt-20'}`}>
+      <div className={`min-h-[calc(100vh-160px)] w-full px-8 md:px-16 max-w-6xl mx-auto pb-20 ${showHeroImage ? 'pt-10' : 'pt-20'} ${loading ? 'flex items-center justify-center' : ''}`}>
 
         {/* Loading */}
         {loading && (
-          <div className="space-y-10">
-            <SkeletonHero />
-            <div className="grid sm:grid-cols-2 gap-6">
-              <SkeletonCard />
-              <SkeletonCard />
-            </div>
+          <div className="w-full max-w-md">
+            <BlogLoadingBar label="Loading the latest stories" />
           </div>
         )}
 

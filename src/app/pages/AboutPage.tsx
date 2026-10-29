@@ -5,12 +5,9 @@ import { Footer } from '../components/Footer';
 import { Seo } from '../components/Seo';
 import { siteConfig } from '../config/site';
 
-// Portrait image URLs — add hosted/IPFS URLs to imageUrl when available.
-// Cards render a numbered placeholder until an image is supplied.
 interface Portrait {
   imageUrl: string;
   caption: string;
-  isPlaceholder?: boolean;
 }
 
 const portraits: Portrait[] = [
@@ -129,24 +126,16 @@ function FloatingGalleryCard({ portrait, index }: { portrait: Portrait; index: n
           transitionDuration: isHovered ? '150ms' : '300ms',
           transitionProperty: 'transform, box-shadow',
           transitionTimingFunction: 'ease-out',
-          width: portrait.imageUrl ? 'fit-content' : '360px',
+          width: 'fit-content',
           height: '380px',
         }}
         className="relative overflow-hidden cursor-pointer rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px]"
       >
-        {portrait.imageUrl ? (
-          <img
-            src={portrait.imageUrl}
-            alt={`ALANA ${index + 1}`}
-            className="h-full w-auto block"
-          />
-        ) : (
-          <div className="w-full h-full bg-[#181818] flex items-center justify-center">
-            <span className="font-mono font-bold text-[#DCC2FE]/10 text-6xl md:text-7xl select-none">
-              {portrait.isPlaceholder ? '?' : String(index + 1).padStart(2, '0')}
-            </span>
-          </div>
-        )}
+        <img
+          src={portrait.imageUrl}
+          alt={`ALANA ${index + 1}`}
+          className="h-full w-auto block"
+        />
 
         <div
           className="absolute inset-0 pointer-events-none"

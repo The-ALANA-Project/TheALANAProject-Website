@@ -1,7 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Minus, Plus } from 'lucide-react';
 import { Seo } from '../components/Seo';
+import alanaBoutiqueImage from '../../assets/products/alana-boutique.webp';
+import alanaWorldImage from '../../assets/products/alana-world.webp';
+
+function ProductVideo({ src, isActive }: { src: string; isActive: boolean }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isActive) {
+      void video.play().catch(() => {
+        // Muted playback can still be blocked by browser or device policies.
+      });
+    } else {
+      video.pause();
+    }
+  }, [isActive]);
+
+  return (
+    <video
+      ref={videoRef}
+      src={src}
+      loop
+      muted
+      playsInline
+      preload="metadata"
+      className="h-full w-full object-cover"
+    />
+  );
+}
 
 const slides = [
   {
@@ -29,8 +60,7 @@ const slides = [
     subtitle:
       'At ALANAboutique™, we give creators a place to mint, license, and sell their digital work on their own terms — and take it anywhere.',
     mediaType: 'image' as const,
-    mediaSrc:
-      'https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeifaz54umkrw3qeuvbuaxhomnyqq3vm7gzvk5t32pnremynixo4fga',
+    mediaSrc: alanaBoutiqueImage,
     specs: [
       { label: 'Type', value: 'Immersive Marketplace' },
       { label: 'Frequency', value: 'Ongoing' },
@@ -63,8 +93,7 @@ const slides = [
     subtitle:
       'At ALANAworld™, players follow ALANA through an action-adventure story that explores techno-philosophical ideas, alternative uses of novel technologies, and how to navigate them safely.',
     mediaType: 'image' as const,
-    mediaSrc:
-      'https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeicrrcfkssnbnaglwudahtool64wrxbip64zcbplcfo67mpp7mpgbi',
+    mediaSrc: alanaWorldImage,
     specs: [
       { label: 'Type', value: 'Action Adventure Game' },
       { label: 'Frequency', value: 'Ongoing' },
@@ -76,7 +105,19 @@ const slides = [
 
 export function ProductsPage() {
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches,
+  );
   const shouldReduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 768px)');
+    const updateViewport = (event: MediaQueryListEvent) => setIsDesktop(event.matches);
+
+    setIsDesktop(mediaQuery.matches);
+    mediaQuery.addEventListener('change', updateViewport);
+    return () => mediaQuery.removeEventListener('change', updateViewport);
+  }, []);
 
   // Keyboard navigation
   useEffect(() => {
@@ -105,11 +146,12 @@ export function ProductsPage() {
         path="/products"
       />
 
-      {/* ── Desktop accordion ──────────────────────────────────────────────── */}
-      <div
-        className="hidden md:flex"
-        style={{ height: 'calc(100vh - 73px)', background: '#262424' }}
-      >
+      {isDesktop ? (
+        /* ── Desktop accordion ────────────────────────────────────────────── */
+        <div
+          className="flex"
+          style={{ height: 'calc(100vh - 73px)', background: '#262424' }}
+        >
         {slides.map((slide, i) => {
           const isActive = activeIndex === i;
           const isAny = activeIndex !== -1;
@@ -124,30 +166,17 @@ export function ProductsPage() {
               transition={
                 shouldReduceMotion
                   ? { duration: 0 }
-                  : { type: 'spring', stiffness: 145, damping: 24, mass: 0.9 }
+                  : { type: 'spring', stiffness: 320, damping: 34, mass: 0.7 }
               }
               style={{
                 flexBasis: 0,
                 flexShrink: 1,
-                willChange: 'flex-grow',
               }}
             >
               {/* Background media */}
-              <div
-                className="absolute inset-0 transition-all duration-700"
-                style={{
-                  filter: !isActive ? 'grayscale(1) brightness(0.4)' : 'grayscale(0) brightness(0.55)',
-                }}
-              >
+              <div className="absolute inset-0">
                 {slide.mediaType === 'video' ? (
-                  <video
-                    src={slide.mediaSrc}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="w-full h-full object-cover"
-                  />
+                  <ProductVideo src={slide.mediaSrc} isActive={isActive} />
                 ) : (
                   <img
                     src={slide.mediaSrc}
@@ -157,17 +186,23 @@ export function ProductsPage() {
                 )}
               </div>
 
-              {/* Hover brightens when not active and nothing else is active */}
-              {!isActive && !isAny && (
-                <div className="absolute inset-0 transition-opacity duration-300 opacity-0 group-hover:opacity-100 bg-black/0" style={{ filter: 'grayscale(0) brightness(0.7)' }} />
-              )}
+              {/* A composited dimmer avoids repainting full-screen media filters during resize. */}
+              <div
+                className={`pointer-events-none absolute inset-0 bg-black transition-opacity duration-200 motion-reduce:duration-0 ${
+                  isActive
+                    ? 'opacity-45'
+                    : isAny
+                      ? 'opacity-70'
+                      : 'opacity-60 group-hover:opacity-50'
+                }`}
+              />
 
               {/* Dark gradient overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
 
               {/* Toggle indicator */}
               <div
-                className="absolute z-10 flex items-center justify-center w-8 h-8 border rounded-full transition-all duration-500"
+                className="absolute z-10 flex items-center justify-center w-8 h-8 border rounded-full transition-all duration-200 motion-reduce:duration-0"
                 style={{
                   borderColor: '#DCC2FE',
                   top: '1.5rem',
@@ -183,7 +218,10 @@ export function ProductsPage() {
                 className="absolute inset-0 flex flex-col items-center justify-center gap-3 pointer-events-none"
                 initial={false}
                 animate={{ opacity: isActive ? 0 : 1 }}
-                transition={{ duration: shouldReduceMotion ? 0 : 0.25 }}
+                transition={{
+                  duration: shouldReduceMotion ? 0 : 0.22,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
               >
                 <span
                   className="font-mono text-sm font-medium select-none"
@@ -213,11 +251,10 @@ export function ProductsPage() {
               <motion.div
                 className="absolute bottom-0 left-0 right-0 p-10"
                 initial={false}
-                animate={{ opacity: isActive ? 1 : 0, y: isActive ? 0 : 24 }}
+                animate={{ opacity: isActive ? 1 : 0, y: isActive ? 0 : 12 }}
                 transition={{
-                  duration: shouldReduceMotion ? 0 : 0.42,
-                  delay: shouldReduceMotion || !isActive ? 0 : 0.18,
-                  ease: [0.22, 1, 0.36, 1],
+                  duration: shouldReduceMotion ? 0 : 0.22,
+                  ease: [0.16, 1, 0.3, 1],
                 }}
                 style={{ pointerEvents: isActive ? 'auto' : 'none' }}
               >
@@ -253,15 +290,10 @@ export function ProductsPage() {
 
                 {/* Specs */}
                 <div className="flex flex-col gap-1.5 mb-8">
-                  {slide.specs.map((spec, si) => (
+                  {slide.specs.map(spec => (
                     <div
                       key={spec.label}
-                      className="flex items-center gap-4 transition-all duration-300"
-                      style={{
-                        transitionDelay: isActive ? `${si * 60 + 200}ms` : '0ms',
-                        opacity: isActive ? 1 : 0,
-                        transform: isActive ? 'translateY(0)' : 'translateY(8px)',
-                      }}
+                      className="flex items-center gap-4"
                     >
                       <span className="font-mono text-[10px] uppercase tracking-widest w-24 shrink-0" style={{ color: 'rgba(255,255,255,0.4)' }}>
                         {spec.label}
@@ -295,22 +327,27 @@ export function ProductsPage() {
             </motion.div>
           );
         })}
-      </div>
-
-      {/* ── Mobile stacked layout ──────────────────────────────────────────── */}
-      <div className="md:hidden" style={{ background: '#262424' }}>
+        </div>
+      ) : (
+        /* ── Mobile stacked layout ────────────────────────────────────────── */
+        <div style={{ background: '#262424' }}>
         {slides.map((slide, i) => {
           const isActive = activeIndex === i;
           return (
             <div key={slide.num} className="relative min-h-20 overflow-hidden">
               {/* Background */}
-              <div className="absolute inset-0" style={{ filter: isActive ? 'grayscale(0) brightness(0.55)' : 'grayscale(1) brightness(0.3)', transition: 'filter 600ms' }}>
+              <div className="absolute inset-0">
                 {slide.mediaType === 'video' ? (
-                  <video src={slide.mediaSrc} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                  <ProductVideo src={slide.mediaSrc} isActive={isActive} />
                 ) : (
                   <img src={slide.mediaSrc} alt={slide.title} className="w-full h-full object-cover" />
                 )}
               </div>
+              <div
+                className={`pointer-events-none absolute inset-0 bg-black transition-opacity duration-200 motion-reduce:duration-0 ${
+                  isActive ? 'opacity-45' : 'opacity-70'
+                }`}
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
 
               {/* Header row — always visible */}
@@ -341,9 +378,9 @@ export function ProductsPage() {
                   shouldReduceMotion
                     ? { duration: 0 }
                     : {
-                        height: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
-                        opacity: { duration: 0.3, delay: isActive ? 0.12 : 0 },
-                        y: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+                        height: { duration: 0.28, ease: [0.2, 0, 0, 1] },
+                        opacity: { duration: 0.22, ease: [0.16, 1, 0.3, 1] },
+                        y: { duration: 0.22, ease: [0.16, 1, 0.3, 1] },
                       }
                 }
                 style={{ pointerEvents: isActive ? 'auto' : 'none' }}
@@ -383,7 +420,8 @@ export function ProductsPage() {
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
     </>
   );
 }

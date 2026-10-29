@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import { ArrowClockwise, Eye, EyeSlash, PencilSimple, PushPin, Trash, X as XIcon } from '@phosphor-icons/react';
 import { Footer } from '../components/Footer';
+import { Button } from '../components/ui/button';
 import { fetchAllBlogPosts, formatPubDate, type BlogPost } from '../services/blogService';
 import {
   fetchCurations,
@@ -1678,7 +1679,7 @@ function WebinarsPanel() {
       {webinars.map(w => (
         <div key={w.id}>
           {editingId === w.id && editDraft ? (
-            <WebinarForm values={editDraft} onChange={setEditDraft} saving={saving}
+            <WebinarForm values={editDraft} onChange={value => setEditDraft(value as HubWebinar)} saving={saving}
               onCancel={() => { setEditingId(null); setEditDraft(null); }}
               onSave={async () => { if (await save(editDraft)) { setEditingId(null); setEditDraft(null); } }}
             />
@@ -1768,7 +1769,7 @@ function OnboardingPanel() {
       {onboarding.map(o => (
         <div key={o.id}>
           {editingId === o.id && editDraft ? (
-            <OnboardingForm values={editDraft} onChange={setEditDraft} saving={saving}
+            <OnboardingForm values={editDraft} onChange={value => setEditDraft(value as HubOnboardingItem)} saving={saving}
               onCancel={() => { setEditingId(null); setEditDraft(null); }}
               onSave={async () => { if (await save(editDraft)) { setEditingId(null); setEditDraft(null); } }}
             />
@@ -1848,7 +1849,12 @@ function ComingSoonPanel({ title, description }: { title: string; description: s
 
 // ── Admin Page ─────────────────────────────────────────────────────────────
 export function AdminPage() {
-  const { role } = useAuth();
+  const {
+    role,
+    guardianSessionStatus,
+    guardianSessionError,
+    authorizeGuardian,
+  } = useAuth();
   const [activeTab, setActiveTab] = useState<'blog' | 'hub' | 'community'>('blog');
 
   if (role !== 'guardian') {
@@ -1858,6 +1864,40 @@ export function AdminPage() {
           <h2 className="text-2xl font-sans">Nucleus Guardians Only</h2>
           <p className="text-muted-foreground">
             This panel is restricted to Nucleus Guardian NFT holders.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (guardianSessionStatus !== 'authorized') {
+    const busy =
+      guardianSessionStatus === 'checking' || guardianSessionStatus === 'authorizing';
+
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center px-8">
+        <div className="w-full max-w-md space-y-5 border border-accent/60 bg-background/70 p-8 text-center shadow-lg backdrop-blur-xl rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px]">
+          <div className="space-y-2">
+            <h2 className="text-2xl font-sans">Authorize Guardian Panel</h2>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Sign a message with your connected wallet. The server will confirm that your
+              Nucleus Guardian membership is active on Optimism before granting access.
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="lg"
+            disabled={busy}
+            onClick={() => authorizeGuardian().catch(() => undefined)}
+            className="h-11 w-full rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] border border-accent bg-accent px-6 text-accent-foreground shadow-lg hover:bg-foreground hover:text-accent"
+          >
+            {busy ? 'Verifying membership…' : 'Sign in as Guardian'}
+          </Button>
+          {guardianSessionError && (
+            <p className="font-mono text-xs text-destructive">{guardianSessionError}</p>
+          )}
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            Signing is free and does not create a transaction.
           </p>
         </div>
       </div>

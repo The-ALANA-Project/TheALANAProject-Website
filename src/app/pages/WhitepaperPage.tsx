@@ -5,14 +5,7 @@ import remarkGfm from 'remark-gfm';
 import { Footer } from '../components/Footer';
 import { Seo } from '../components/Seo';
 import { useAuth } from '../contexts/AuthContext';
-import { projectId, publicAnonKey } from '../../../utils/supabase/info';
-
-const REST = `https://${projectId}.supabase.co/rest/v1`;
-const HEADERS = {
-  apikey: publicAnonKey,
-  Authorization: `Bearer ${publicAnonKey}`,
-  'Content-Type': 'application/json',
-};
+import { fetchManagedResource, mutateGuardianResource } from '../services/guardianApi';
 
 type SubSection = { title: string; anchor: string };
 type Section = { num: string; title: string; anchor: string; children?: SubSection[] };
@@ -89,14 +82,11 @@ const LS_KEY = (anchor: string) => `alana_wp_${anchor}`;
 
 async function fetchSection(anchor: string): Promise<string | null> {
   try {
-    const res = await fetch(
-      `${REST}/whitepaper_sections?anchor=eq.${encodeURIComponent(anchor)}&select=content&limit=1`,
-      { headers: HEADERS }
+    const rows = await fetchManagedResource<{ anchor: string; content: string }>(
+      'whitepaper',
+      { anchor },
     );
-    if (res.ok) {
-      const rows = await res.json();
-      if (rows[0]?.content) return rows[0].content;
-    }
+    if (rows[0]?.content) return rows[0].content;
   } catch {}
   return localStorage.getItem(LS_KEY(anchor));
 }
@@ -147,13 +137,7 @@ function preprocessMarkdown(content: string): string {
 
 async function upsertSection(anchor: string, content: string): Promise<void> {
   localStorage.setItem(LS_KEY(anchor), content);
-  try {
-    await fetch(`${REST}/whitepaper_sections`, {
-      method: 'POST',
-      headers: { ...HEADERS, Prefer: 'resolution=merge-duplicates,return=minimal' },
-      body: JSON.stringify({ anchor, content }),
-    });
-  } catch {}
+  await mutateGuardianResource('upsert', 'whitepaper', { anchor, content });
 }
 
 function SectionCard({
@@ -315,8 +299,8 @@ function SectionCard({
 }
 
 export function WhitepaperPage() {
-  const { role } = useAuth();
-  const isGuardian = role === 'guardian';
+  const { role, guardianSessionStatus } = useAuth();
+  const isGuardian = role === 'guardian' && guardianSessionStatus === 'authorized';
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const allSectionsExpanded = expandedSections.size === toc.length;
 
