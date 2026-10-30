@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router';
 import { Search, RefreshCw } from 'lucide-react';
 import { Footer } from '../components/Footer';
 import { Seo } from '../components/Seo';
+import { BlogBeamReveal } from '../components/BlogBeamReveal';
 import { BlogLoadingBar } from '../components/BlogLoadingBar';
+import { BlogSubscribePanel, openParagraphSubscription } from '../components/BlogSubscribePanel';
+import { Button } from '../components/ui/button';
 import {
   fetchAllBlogPosts,
   getAuthorInitials,
@@ -97,10 +100,21 @@ function HeroText({ post, onClick }: { post: BlogPost; onClick: () => void }) {
         </h2>
       </div>
 
-      <div className="flex items-center gap-3 pt-1">
-        <AuthorAvatar name={post.author} avatarUrl={post.authorAvatarUrl} size="md" />
-        <p className="font-mono text-xs font-medium">{post.author}</p>
-
+      <div className="flex items-end justify-between gap-4 pt-1">
+        <div className="flex items-center gap-3">
+          <AuthorAvatar name={post.author} avatarUrl={post.authorAvatarUrl} size="md" />
+          <p className="font-mono text-xs font-medium">{post.author}</p>
+        </div>
+        <Button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            openParagraphSubscription();
+          }}
+          className="h-10 shrink-0 rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] border border-accent bg-accent px-5 text-accent-foreground shadow-lg hover:bg-foreground hover:text-accent"
+        >
+          Subscribe
+        </Button>
       </div>
     </div>
   );
@@ -204,32 +218,16 @@ export function BlogPage() {
         path="/blog"
       />
 
-      {/* Hero image — constrained to match page content padding */}
-      {showHeroImage && (
-        <div className="px-8 md:px-16 max-w-6xl mx-auto pt-10">
-          <div className="border border-foreground rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] overflow-hidden">
-            <img
-              src={featured!.imageUrl}
-              alt={featured!.title}
-              className="w-full block object-cover"
-              loading="eager"
-            />
+      {loading && (
+        <div className="flex min-h-[calc(100vh-160px)] w-full max-w-6xl items-center justify-center px-8 pb-20 pt-20 md:px-16 mx-auto">
+          <div className="w-full max-w-md">
+            <BlogLoadingBar label="Loading the latest stories" />
           </div>
         </div>
       )}
 
-      {/* Constrained content */}
-      <div className={`min-h-[calc(100vh-160px)] w-full px-8 md:px-16 max-w-6xl mx-auto pb-20 ${showHeroImage ? 'pt-10' : 'pt-20'} ${loading ? 'flex items-center justify-center' : ''}`}>
-
-        {/* Loading */}
-        {loading && (
-          <div className="w-full max-w-md">
-            <BlogLoadingBar label="Loading the latest stories" />
-          </div>
-        )}
-
-        {/* Error */}
-        {!loading && error && (
+      {!loading && error && (
+        <div className="min-h-[calc(100vh-160px)] w-full px-8 pb-20 pt-20 md:px-16 max-w-6xl mx-auto">
           <div className="border border-foreground/30 rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] p-10 text-center">
             <p className="font-mono text-sm text-muted-foreground mb-4">{error}</p>
             <button
@@ -239,79 +237,97 @@ export function BlogPage() {
               Try again
             </button>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Articles */}
-        {!loading && !error && posts.length > 0 && (
-          <div className="space-y-10">
-            {/* Hero text */}
-            {featured && (
-              <HeroText
-                post={featured}
-                onClick={() => navigate(`/blog/${featured.slug}`)}
-              />
-            )}
-
-            {/* Divider */}
-            {rest.length > 0 && <div className="h-px bg-foreground" style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)' }} />}
-
-            {/* Filter + grid */}
-            {rest.length > 0 && (
-              <>
-                <FilterBar
-                  searchQuery={searchQuery}
-                  onSearch={setSearchQuery}
-                  onRefresh={() => load(true)}
+      {!loading && !error && (
+        <BlogBeamReveal>
+          {/* Hero image — constrained to match page content padding */}
+          {showHeroImage && (
+            <div className="px-8 md:px-16 max-w-6xl mx-auto pt-10">
+              <div className="border border-foreground rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] overflow-hidden">
+                <img
+                  src={featured!.imageUrl}
+                  alt={featured!.title}
+                  className="w-full block object-cover"
+                  loading="eager"
                 />
+              </div>
+            </div>
+          )}
 
-                {filteredRest.length > 0 ? (
+          <div className={`min-h-[calc(100vh-160px)] w-full px-8 md:px-16 max-w-6xl mx-auto pb-20 ${showHeroImage ? 'pt-10' : 'pt-20'}`}>
+            {posts.length > 0 ? (
+              <div className="space-y-10">
+                {/* Hero text */}
+                {featured && (
+                  <HeroText
+                    post={featured}
+                    onClick={() => navigate(`/blog/${featured.slug}`)}
+                  />
+                )}
+
+                {/* Divider */}
+                {rest.length > 0 && <div className="h-px bg-foreground" style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)' }} />}
+
+                {/* Filter + grid */}
+                {rest.length > 0 && (
                   <>
-                    <div className="grid sm:grid-cols-2 gap-6">
-                      {pagedPosts.map((post) => (
-                        <BlogCard
-                          key={post.guid}
-                          post={post}
-                          onClick={() => navigate(`/blog/${post.slug}`)}
-                        />
-                      ))}
-                    </div>
+                    <FilterBar
+                      searchQuery={searchQuery}
+                      onSearch={setSearchQuery}
+                      onRefresh={() => load(true)}
+                    />
 
-                    {totalPages > 1 && (
-                      <div className="flex items-center justify-between pt-4">
-                        <button
-                          onClick={() => { setCurrentPage((p) => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                          disabled={currentPage === 1}
-                          className="inline-flex h-11 w-32 items-center justify-center rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] border border-accent bg-accent px-6 font-sans text-sm font-medium text-[#262424] shadow-lg backdrop-blur-sm transition-all duration-300 hover:border-accent hover:bg-[#262424] hover:text-accent disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-accent disabled:hover:text-[#262424]"
-                        >
-                          Previous
-                        </button>
-                        <span className="font-mono text-xs text-muted-foreground">
-                          {currentPage} / {totalPages}
-                        </span>
-                        <button
-                          onClick={() => { setCurrentPage((p) => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                          disabled={currentPage === totalPages}
-                          className="inline-flex h-11 w-32 items-center justify-center rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] border border-accent bg-accent px-6 font-sans text-sm font-medium text-[#262424] shadow-lg backdrop-blur-sm transition-all duration-300 hover:border-accent hover:bg-[#262424] hover:text-accent disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-accent disabled:hover:text-[#262424]"
-                        >
-                          Next
-                        </button>
-                      </div>
+                    {filteredRest.length > 0 ? (
+                      <>
+                        <div className="grid sm:grid-cols-2 gap-6">
+                          {pagedPosts.map((post) => (
+                            <BlogCard
+                              key={post.guid}
+                              post={post}
+                              onClick={() => navigate(`/blog/${post.slug}`)}
+                            />
+                          ))}
+                        </div>
+
+                        {totalPages > 1 && (
+                          <div className="flex items-center justify-between pt-4">
+                            <button
+                              onClick={() => { setCurrentPage((p) => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                              disabled={currentPage === 1}
+                              className="inline-flex h-11 w-32 items-center justify-center rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] border border-accent bg-accent px-6 font-sans text-sm font-medium text-[#262424] shadow-lg backdrop-blur-sm transition-all duration-300 hover:border-accent hover:bg-[#262424] hover:text-accent disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-accent disabled:hover:text-[#262424]"
+                            >
+                              Previous
+                            </button>
+                            <span className="font-mono text-xs text-muted-foreground">
+                              {currentPage} / {totalPages}
+                            </span>
+                            <button
+                              onClick={() => { setCurrentPage((p) => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                              disabled={currentPage === totalPages}
+                              className="inline-flex h-11 w-32 items-center justify-center rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] border border-accent bg-accent px-6 font-sans text-sm font-medium text-[#262424] shadow-lg backdrop-blur-sm transition-all duration-300 hover:border-accent hover:bg-[#262424] hover:text-accent disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-accent disabled:hover:text-[#262424]"
+                            >
+                              Next
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <p className="font-mono text-sm text-muted-foreground py-10">
+                        No articles match your search.
+                      </p>
                     )}
                   </>
-                ) : (
-                  <p className="font-mono text-sm text-muted-foreground py-10">
-                    No articles match your search.
-                  </p>
                 )}
-              </>
+              </div>
+            ) : (
+              <p className="font-mono text-sm text-muted-foreground text-center py-20">No articles found.</p>
             )}
           </div>
-        )}
-
-        {!loading && !error && posts.length === 0 && (
-          <p className="font-mono text-sm text-muted-foreground text-center py-20">No articles found.</p>
-        )}
-      </div>
+          <BlogSubscribePanel />
+        </BlogBeamReveal>
+      )}
 
       <Footer />
     </>

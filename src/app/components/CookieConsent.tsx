@@ -1,69 +1,89 @@
-import { useState } from 'react';
-import { Link } from 'react-router';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { Button } from './ui/button';
+import { useEffect, useState } from "react"
+import { Link, useLocation } from "react-router"
+import { AnimatePresence, motion, useReducedMotion } from "motion/react"
+import { Button } from "./ui/button"
+import { HOME_INTRO_COMPLETE_EVENT } from "../config/events"
 
-const CONSENT_STORAGE_KEY = 'alana-cookie-consent';
+const CONSENT_STORAGE_KEY = "alana-cookie-consent"
 
-type ConsentChoice = 'accepted' | 'declined';
+type ConsentChoice = "accepted" | "declined"
 
 declare global {
   interface Window {
-    gtag?: (...args: unknown[]) => void;
+    gtag?: (...args: unknown[]) => void
   }
 }
 
 export function CookieConsent() {
-  const shouldReduceMotion = useReducedMotion();
-  const [isVisible, setIsVisible] = useState(() => {
+  const location = useLocation()
+  const shouldReduceMotion = useReducedMotion()
+  const [needsConsent, setNeedsConsent] = useState(() => {
     try {
-      return localStorage.getItem(CONSENT_STORAGE_KEY) === null;
+      return localStorage.getItem(CONSENT_STORAGE_KEY) === null
     } catch {
-      return true;
+      return true
     }
-  });
+  })
+  const [introComplete, setIntroComplete] = useState(location.pathname !== "/")
+
+  useEffect(() => {
+    if (location.pathname !== "/") {
+      setIntroComplete(true)
+      return
+    }
+
+    setIntroComplete(false)
+    const handleIntroComplete = () => setIntroComplete(true)
+    window.addEventListener(HOME_INTRO_COMPLETE_EVENT, handleIntroComplete)
+    return () =>
+      window.removeEventListener(HOME_INTRO_COMPLETE_EVENT, handleIntroComplete)
+  }, [location.pathname])
 
   const saveChoice = (choice: ConsentChoice) => {
     try {
-      localStorage.setItem(CONSENT_STORAGE_KEY, choice);
+      localStorage.setItem(CONSENT_STORAGE_KEY, choice)
     } catch {
       // Consent still applies for the current page when storage is unavailable.
     }
 
-    const granted = choice === 'accepted';
-    window.gtag?.('consent', 'update', {
-      analytics_storage: granted ? 'granted' : 'denied',
-      ad_storage: 'denied',
-      ad_user_data: 'denied',
-      ad_personalization: 'denied',
-    });
+    const granted = choice === "accepted"
+    window.gtag?.("consent", "update", {
+      analytics_storage: granted ? "granted" : "denied",
+      ad_storage: "denied",
+      ad_user_data: "denied",
+      ad_personalization: "denied",
+    })
 
     if (granted) {
-      window.gtag?.('event', 'page_view', {
+      window.gtag?.("event", "page_view", {
         page_location: window.location.href,
         page_title: document.title,
-      });
+      })
     }
 
-    setIsVisible(false);
-  };
+    setNeedsConsent(false)
+  }
 
   return (
     <AnimatePresence>
-      {isVisible && (
+      {needsConsent && (introComplete || shouldReduceMotion) && (
         <motion.div
           className="fixed inset-x-0 bottom-0 z-[70] mx-auto w-full max-w-6xl px-4 md:px-16"
           role="dialog"
           aria-modal="false"
           aria-labelledby="cookie-consent-title"
           aria-describedby="cookie-consent-description"
-          initial={shouldReduceMotion ? { opacity: 0 } : { y: '100%', opacity: 0.8 }}
+          initial={
+            shouldReduceMotion ? { opacity: 0 } : { y: "100%", opacity: 0.8 }
+          }
           animate={{ y: 0, opacity: 1 }}
-          exit={shouldReduceMotion ? { opacity: 0 } : { y: '100%', opacity: 0.8 }}
+          exit={
+            shouldReduceMotion ? { opacity: 0 } : { y: "100%", opacity: 0.8 }
+          }
           transition={
             shouldReduceMotion
               ? { duration: 0 }
-              : { type: 'spring', stiffness: 280, damping: 30 }
+              : { type: "spring", stiffness: 280, damping: 30 }
           }
         >
           <div className="rounded-t-[24px] border border-foreground/20 bg-background/95 px-6 py-6 shadow-2xl backdrop-blur-2xl md:px-10 md:py-8">
@@ -84,9 +104,13 @@ export function CookieConsent() {
                   id="cookie-consent-description"
                   className="text-sm leading-relaxed text-muted-foreground"
                 >
-                  We use Google Analytics cookies to understand how the website is used. Analytics
-                  is optional, advertising storage stays disabled, and you can read more in our{' '}
-                  <Link to="/privacy" className="font-medium text-foreground underline underline-offset-4 hover:text-accent">
+                  We use Google Analytics cookies to understand how the website
+                  is used. Analytics is optional, advertising storage stays
+                  disabled, and you can read more in our{" "}
+                  <Link
+                    to="/privacy"
+                    className="font-medium text-foreground underline underline-offset-4 hover:text-accent"
+                  >
                     Privacy Policy
                   </Link>
                   .
@@ -97,14 +121,14 @@ export function CookieConsent() {
                 <Button
                   variant="outline"
                   size="lg"
-                  onClick={() => saveChoice('declined')}
+                  onClick={() => saveChoice("declined")}
                   className="h-11 rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] border-foreground px-6"
                 >
                   Decline
                 </Button>
                 <Button
                   size="lg"
-                  onClick={() => saveChoice('accepted')}
+                  onClick={() => saveChoice("accepted")}
                   className="h-11 rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] border border-accent bg-accent px-6 text-accent-foreground hover:bg-foreground hover:text-accent"
                 >
                   Accept Analytics
@@ -115,5 +139,5 @@ export function CookieConsent() {
         </motion.div>
       )}
     </AnimatePresence>
-  );
+  )
 }

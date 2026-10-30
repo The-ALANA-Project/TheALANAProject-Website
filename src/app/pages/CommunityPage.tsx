@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { motion } from 'motion/react';
 import { Link } from 'react-router';
 import { Footer } from '../components/Footer';
+import { HeroScrambleHeading } from '../components/HeroScrambleHeading';
 import { Seo } from '../components/Seo';
 import { Button } from '../components/ui/button';
 import { siteConfig } from '../config/site';
+import { useHeroIntroSequence } from '../hooks/useHeroIntroSequence';
 import { fetchBlogPosts, BlogPost, getAuthorInitials, formatPubDate } from '../services/blogService';
 import { fetchTickerItems, fetchStoryFlags, fetchCommunityMembers, fetchCommunityTools, type CommunityMember, type CommunityTool } from '../services/communityAdminService';
 import { optimizedImageSrcSet, optimizedImageUrl } from '../utils/image';
@@ -270,6 +273,12 @@ function BlogPostCard({ post }: { post: BlogPost }) {
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 export function CommunityPage() {
+  const {
+    shouldReduceMotion,
+    revealDescription,
+    descriptionVisible,
+    transition: heroRevealTransition,
+  } = useHeroIntroSequence();
   const [quoteIndex, setQuoteIndex] = useState(0);
   const [quoteVisible, setQuoteVisible] = useState(true);
   const [search, setSearch] = useState('');
@@ -420,10 +429,23 @@ export function CommunityPage() {
           <div className="ch-grain" />
         </div>
         <div className="relative z-10 w-full max-w-6xl mx-auto px-8 md:px-16">
-          <h1 className="font-medium text-[#262424] leading-tight max-w-2xl">The ALANA Community</h1>
-          <p className="mt-4 text-[#262424]/70 max-w-2xl font-normal leading-relaxed">
+          <HeroScrambleHeading
+            className="font-medium text-[#262424] leading-tight max-w-2xl"
+            onComplete={revealDescription}
+          >
+            The ALANA Community
+          </HeroScrambleHeading>
+          <motion.p
+            className="mt-4 text-[#262424]/70 max-w-2xl font-normal leading-relaxed"
+            initial={{ y: shouldReduceMotion ? 0 : -24, opacity: 0 }}
+            animate={{
+              y: descriptionVisible || shouldReduceMotion ? 0 : -24,
+              opacity: descriptionVisible || shouldReduceMotion ? 1 : 0,
+            }}
+            transition={heroRevealTransition}
+          >
             Join our vibrant community where creativity, innovation, and ownership thrive together. Connect with creators, builders, and tech-curious minds from around the world.
-          </p>
+          </motion.p>
         </div>
         <style>{`
           .ch-blob {

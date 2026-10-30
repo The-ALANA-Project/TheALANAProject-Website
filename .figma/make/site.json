@@ -10,6 +10,9 @@
   "icons": {
     "icon": "https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeiapuwp5qvwn2bm42vkqzhfij2oegdguy3kzprdxu5g3oazlyuurma/ALANA%20Image%20Mark%20-%20Black%20on%20White.png"
   },
+  "openGraph": {
+    "image": "https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeic2t2wzdzj7uing33sshx6ygvj76ci77gfbx3txetwgbmuh6civqy"
+  },
   "analytics": {
     "googleAnalyticsId": "G-MGL3F4DDC0"
   },

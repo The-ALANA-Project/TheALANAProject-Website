@@ -198,7 +198,7 @@ export function PressKitPage() {
       />
       <div className="min-h-[calc(100vh-160px)] px-8 md:px-16 max-w-6xl mx-auto py-20">
         <header className="mb-16">
-          <p className="font-mono text-sm text-muted-foreground mb-3 uppercase tracking-widest">Media</p>
+          <p className="font-mono text-sm text-muted-foreground mb-3 uppercase tracking-widest">The ALANA Project</p>
           <h1 className="font-sans text-2xl font-medium leading-normal">Press Kit</h1>
           <p className="mt-4 max-w-2xl font-sans text-lg font-normal leading-normal text-muted-foreground md:text-xl">
             Official brand assets and media resources for press, partners, and community creators. For editorial enquiries contact{' '}

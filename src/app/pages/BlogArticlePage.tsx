@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Footer } from '../components/Footer';
 import { Seo } from '../components/Seo';
+import { BlogBeamReveal } from '../components/BlogBeamReveal';
 import { BlogLoadingBar } from '../components/BlogLoadingBar';
+import { BlogSubscribePanel } from '../components/BlogSubscribePanel';
 import {
   fetchBlogPosts,
   fetchBlogPostContent,
@@ -84,16 +86,6 @@ export function BlogArticlePage() {
         />
       )}
       <div className="relative min-h-[calc(100vh-160px)] w-full px-8 md:px-16 max-w-6xl mx-auto py-12">
-        {/* Back button */}
-        {!loading && (
-          <button
-            onClick={() => navigate('/blog')}
-            className="inline-flex items-center justify-center px-6 h-11 font-sans text-sm font-medium bg-accent text-[#262424] backdrop-blur-sm border border-accent shadow-lg rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] transition-all duration-300 hover:bg-[#262424] hover:text-accent hover:border-accent mb-10"
-          >
-            Back to Blog
-          </button>
-        )}
-
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center px-8 md:px-16">
             <div className="w-full max-w-md">
@@ -103,19 +95,28 @@ export function BlogArticlePage() {
         )}
 
         {!loading && error && (
-          <div className="text-center py-20">
-            <p className="font-mono text-sm text-muted-foreground mb-4">{error}</p>
+          <>
             <button
               onClick={() => navigate('/blog')}
-              className="font-mono text-xs px-4 py-2 border border-foreground rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] hover:bg-foreground hover:text-background transition-colors"
+              className="inline-flex items-center justify-center px-6 h-11 font-sans text-sm font-medium bg-accent text-[#262424] backdrop-blur-sm border border-accent shadow-lg rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] transition-all duration-300 hover:bg-[#262424] hover:text-accent hover:border-accent mb-10"
             >
               Back to Blog
             </button>
-          </div>
+            <div className="text-center py-20">
+              <p className="font-mono text-sm text-muted-foreground mb-4">{error}</p>
+            </div>
+          </>
         )}
 
         {!loading && post && (
-          <>
+          <BlogBeamReveal>
+            <button
+              onClick={() => navigate('/blog')}
+              className="inline-flex items-center justify-center px-6 h-11 font-sans text-sm font-medium bg-accent text-[#262424] backdrop-blur-sm border border-accent shadow-lg rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] transition-all duration-300 hover:bg-[#262424] hover:text-accent hover:border-accent mb-10"
+            >
+              Back to Blog
+            </button>
+
             {/* Hero image — full width, proportional */}
             {post.imageUrl && (
               <div className="overflow-hidden rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] mb-8 border border-foreground">
@@ -295,9 +296,13 @@ export function BlogArticlePage() {
               dangerouslySetInnerHTML={{ __html: post.contentHtml }}
             />
 
-          </>
+          </BlogBeamReveal>
         )}
       </div>
+
+      {!loading && post && (
+        <BlogSubscribePanel />
+      )}
 
       <Footer />
     </>

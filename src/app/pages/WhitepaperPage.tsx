@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { Pencil, Check, X, ChevronDown } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Footer } from '../components/Footer';
+import { HeroScrambleHeading } from '../components/HeroScrambleHeading';
 import { Seo } from '../components/Seo';
+import { WhitepaperCubeField } from '../components/WhitepaperCubeField';
 import { useAuth } from '../contexts/AuthContext';
+import { useHeroIntroSequence } from '../hooks/useHeroIntroSequence';
 import { fetchManagedResource, mutateGuardianResource } from '../services/guardianApi';
 
 type SubSection = { title: string; anchor: string };
@@ -186,7 +190,10 @@ function SectionCard({
   const borderClass = saved ? 'border-foreground' : 'border-foreground/30';
 
   return (
-    <div id={anchor} className={`border ${borderClass} rounded-[8px] p-6 md:p-8`}>
+    <div
+      id={anchor}
+      className={`border ${borderClass} rounded-[8px] bg-background/70 p-6 shadow-lg backdrop-blur-xl md:p-8`}
+    >
       <div className={`flex items-start justify-between gap-4 ${isExpanded ? 'mb-4' : ''}`}>
         <button
           type="button"
@@ -303,6 +310,14 @@ export function WhitepaperPage() {
   const isGuardian = role === 'guardian' && guardianSessionStatus === 'authorized';
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const allSectionsExpanded = expandedSections.size === toc.length;
+  const {
+    shouldReduceMotion,
+    revealDescription,
+    revealActions,
+    descriptionVisible,
+    actionsVisible,
+    transition: heroRevealTransition,
+  } = useHeroIntroSequence();
 
   function toggleSection(anchor: string) {
     setExpandedSections((prev) => {
@@ -323,36 +338,61 @@ export function WhitepaperPage() {
         description="The technical and conceptual foundation of The ALANA Project — covering token economics, governance, contributor roles, and the long-term vision."
         path="/whitepaper"
       />
-      <div className="min-h-[calc(100vh-160px)] w-full px-8 md:px-16 max-w-6xl mx-auto py-20">
-        <header className="mb-16">
+      <div className="relative isolate min-h-[calc(100vh-160px)] w-full overflow-clip">
+        <WhitepaperCubeField />
+        <div className="relative z-10 w-full px-8 md:px-16 max-w-6xl mx-auto py-20">
+          <header className="mb-16">
           <p className="font-mono text-sm text-muted-foreground mb-2">The ALANA Project</p>
-          <h1 className="font-sans text-2xl font-medium leading-normal">Whitepaper 0.3</h1>
-          <p className="mt-4 text-base md:text-lg text-muted-foreground max-w-2xl leading-relaxed">
-            A Community-Governed Ecosystem for Creator Sovereignty
-          </p>
+          <HeroScrambleHeading
+            className="font-sans text-2xl font-medium leading-normal"
+            onComplete={revealDescription}
+          >
+            Whitepaper 0.3
+          </HeroScrambleHeading>
+          <motion.div
+            initial={{ y: shouldReduceMotion ? 0 : -24, opacity: 0 }}
+            animate={{
+              y: descriptionVisible || shouldReduceMotion ? 0 : -24,
+              opacity: descriptionVisible || shouldReduceMotion ? 1 : 0,
+            }}
+            transition={heroRevealTransition}
+            onAnimationComplete={revealActions}
+          >
+            <p className="mt-4 text-base md:text-lg text-muted-foreground max-w-2xl leading-relaxed">
+              A Community-Governed Ecosystem for Creator Sovereignty
+            </p>
 
-          <div className="mt-6 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-            <span className="font-mono text-xs text-muted-foreground uppercase tracking-widest">Authored by</span>
-            {[
-              { name: 'Lutra', url: 'https://www.linkedin.com/in/nils-otter-a23446131/' },
-              { name: 'Stella', url: 'https://www.linkedin.com/in/stella-achenbach/' },
-              { name: 'Greyscale', url: 'https://www.linkedin.com/in/kerry-allen-greyscale-group/' },
-            ].map(({ name, url }, i, arr) => (
-              <span key={name} className="font-mono text-sm">
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2 decoration-foreground/20 hover:decoration-foreground"
-                >
-                  {name}
-                </a>
-                {i < arr.length - 1 && <span className="text-muted-foreground">,</span>}
-              </span>
-            ))}
-          </div>
+            <div className="mt-6 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <span className="font-mono text-xs text-muted-foreground uppercase tracking-widest">Authored by</span>
+              {[
+                { name: 'Lutra', url: 'https://www.linkedin.com/in/nils-otter-a23446131/' },
+                { name: 'Stella', url: 'https://www.linkedin.com/in/stella-achenbach/' },
+                { name: 'Greyscale', url: 'https://www.linkedin.com/in/kerry-allen-greyscale-group/' },
+              ].map(({ name, url }, i, arr) => (
+                <span key={name} className="font-mono text-sm">
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2 decoration-foreground/20 hover:decoration-foreground"
+                  >
+                    {name}
+                  </a>
+                  {i < arr.length - 1 && <span className="text-muted-foreground">,</span>}
+                </span>
+              ))}
+            </div>
+          </motion.div>
 
-          <div className="flex flex-col sm:flex-row gap-4 mt-8">
+          <motion.div
+            className="flex flex-col sm:flex-row gap-4 mt-8"
+            initial={{ y: shouldReduceMotion ? 0 : 24, opacity: 0 }}
+            animate={{
+              y: actionsVisible || shouldReduceMotion ? 0 : 24,
+              opacity: actionsVisible || shouldReduceMotion ? 1 : 0,
+            }}
+            transition={heroRevealTransition}
+          >
             <button
               type="button"
               onClick={toggleAllSections}
@@ -366,22 +406,23 @@ export function WhitepaperPage() {
             >
               Download PDF
             </button>
-          </div>
-        </header>
+          </motion.div>
+          </header>
 
-        {/* Content — one card per top-level section */}
-        <div className="space-y-6">
-          {toc.map((s) => (
-            <SectionCard
-              key={s.anchor}
-              anchor={s.anchor}
-              title={s.title}
-              num={s.num || undefined}
-              isGuardian={isGuardian}
-              isExpanded={expandedSections.has(s.anchor)}
-              onToggle={() => toggleSection(s.anchor)}
-            />
-          ))}
+          {/* Content — one card per top-level section */}
+          <div className="space-y-6">
+            {toc.map((s) => (
+              <SectionCard
+                key={s.anchor}
+                anchor={s.anchor}
+                title={s.title}
+                num={s.num || undefined}
+                isGuardian={isGuardian}
+                isExpanded={expandedSections.has(s.anchor)}
+                onToggle={() => toggleSection(s.anchor)}
+              />
+            ))}
+          </div>
         </div>
       </div>
 

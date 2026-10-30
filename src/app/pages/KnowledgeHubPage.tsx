@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { CaretDoubleDown, X } from '@phosphor-icons/react';
 import { fetchHubWebinars, fetchHubOnboarding, type HubWebinar, type HubOnboardingItem } from '../services/communityAdminService';
 import { LearnerQuiz } from '../components/LearnerQuiz';
@@ -12,8 +12,10 @@ import { FilmPass } from 'three/examples/jsm/postprocessing/FilmPass.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Seo } from '../components/Seo';
 import { Footer } from '../components/Footer';
+import { HeroScrambleHeading } from '../components/HeroScrambleHeading';
 import { siteConfig } from '../config/site';
 import { Button } from '../components/ui/button';
+import { useHeroIntroSequence } from '../hooks/useHeroIntroSequence';
 import { optimizedImageSrcSet, optimizedImageUrl } from '../utils/image';
 
 // ── Shaders ───────────────────────────────────────────────────────────────────
@@ -119,7 +121,14 @@ export function KnowledgeHubPage() {
   const [onboarding, setOnboarding] = useState<HubOnboardingItem[]>([]);
   const [isPlaying, setIsPlaying] = useState(true);
   const [activeQuizId, setActiveQuizId] = useState<string | null>(null);
-  const shouldReduceMotion = useReducedMotion();
+  const {
+    shouldReduceMotion,
+    revealDescription,
+    revealActions,
+    descriptionVisible,
+    actionsVisible,
+    transition: heroRevealTransition,
+  } = useHeroIntroSequence();
   const activeQuiz = ONBOARDING_QUIZZES.find(quiz => quiz.id === activeQuizId);
   const shuffledTools = useMemo(() => {
     const arr = [...ALL_TOOLS];
@@ -428,28 +437,52 @@ export function KnowledgeHubPage() {
           <div className="relative mx-auto flex h-full w-full max-w-6xl flex-col justify-between px-8 pb-10 pt-10 md:px-16">
           {/* Title — upper left */}
           <div className="flex flex-col items-start gap-2 pointer-events-none select-none">
-            <h1 className="m-0 font-sans text-2xl font-medium leading-normal text-background">Knowledge HUB</h1>
-            <span className="block font-sans text-[20px] uppercase tracking-widest mt-1" style={{ color: 'rgba(243,243,243,0.55)' }}>
-              LEARN — CREATE — BUILD
-            </span>
-            <Button
-              onClick={togglePlay}
-              title={isPlaying ? 'Pause animation' : 'Resume animation'}
-              aria-label={isPlaying ? 'Pause hero animation' : 'Resume hero animation'}
-              className="pointer-events-auto mt-2 h-11 w-fit rounded-[4px] border border-white/30 bg-white/5 px-6 font-sans text-sm font-medium text-white backdrop-blur-sm hover:border-accent hover:bg-white/5 hover:text-accent"
+            <HeroScrambleHeading
+              className="m-0 font-sans text-2xl font-medium leading-normal text-background"
+              onComplete={revealDescription}
             >
-              {isPlaying ? (
-                <svg width="10" height="11" viewBox="0 0 10 11" fill="currentColor" aria-hidden="true">
-                  <rect x="0" y="0" width="3.5" height="11" rx="1" />
-                  <rect x="6.5" y="0" width="3.5" height="11" rx="1" />
-                </svg>
-              ) : (
-                <svg width="10" height="11" viewBox="0 0 10 11" fill="currentColor" aria-hidden="true">
-                  <path d="M1 0.5L9.5 5.5L1 10.5V0.5Z" />
-                </svg>
-              )}
-              {isPlaying ? 'Pause' : 'Resume'}
-            </Button>
+              Knowledge HUB
+            </HeroScrambleHeading>
+            <motion.span
+              className="block font-sans text-[20px] uppercase tracking-widest mt-1"
+              style={{ color: 'rgba(243,243,243,0.55)' }}
+              initial={{ y: shouldReduceMotion ? 0 : -24, opacity: 0 }}
+              animate={{
+                y: descriptionVisible || shouldReduceMotion ? 0 : -24,
+                opacity: descriptionVisible || shouldReduceMotion ? 1 : 0,
+              }}
+              transition={heroRevealTransition}
+              onAnimationComplete={revealActions}
+            >
+              LEARN — CREATE — BUILD
+            </motion.span>
+            <motion.div
+              initial={{ y: shouldReduceMotion ? 0 : 24, opacity: 0 }}
+              animate={{
+                y: actionsVisible || shouldReduceMotion ? 0 : 24,
+                opacity: actionsVisible || shouldReduceMotion ? 1 : 0,
+              }}
+              transition={heroRevealTransition}
+            >
+              <Button
+                onClick={togglePlay}
+                title={isPlaying ? 'Pause animation' : 'Resume animation'}
+                aria-label={isPlaying ? 'Pause hero animation' : 'Resume hero animation'}
+                className="pointer-events-auto mt-2 h-11 w-fit rounded-[4px] border border-white/30 bg-white/5 px-6 font-sans text-sm font-medium text-white backdrop-blur-sm hover:border-accent hover:bg-white/5 hover:text-accent"
+              >
+                {isPlaying ? (
+                  <svg width="10" height="11" viewBox="0 0 10 11" fill="currentColor" aria-hidden="true">
+                    <rect x="0" y="0" width="3.5" height="11" rx="1" />
+                    <rect x="6.5" y="0" width="3.5" height="11" rx="1" />
+                  </svg>
+                ) : (
+                  <svg width="10" height="11" viewBox="0 0 10 11" fill="currentColor" aria-hidden="true">
+                    <path d="M1 0.5L9.5 5.5L1 10.5V0.5Z" />
+                  </svg>
+                )}
+                {isPlaying ? 'Pause' : 'Resume'}
+              </Button>
+            </motion.div>
           </div>
 
           {/* HUD bottom-left */}

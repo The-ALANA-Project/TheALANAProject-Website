@@ -763,7 +763,7 @@ function MembersPanel() {
 
   async function handleSave(data: Omit<CommunityMember, 'id'> & { id?: string }) {
     setSaving(true);
-    const saved = await upsertCommunityMember(data);
+    const { data: saved, error } = await upsertCommunityMember(data);
     if (saved) {
       if (data.id) {
         setMembers(prev => prev.map(m => m.id === data.id ? saved : m));
@@ -772,11 +772,11 @@ function MembersPanel() {
         setMembers(prev => [...prev, saved]);
         toast.success('Member added');
       }
+      setEditingId(null);
+      setAdding(false);
     } else {
-      toast.error('Failed to save — Supabase table may not exist yet');
+      toast.error(`Failed to save member: ${error ?? 'Unknown database error'}`);
     }
-    setEditingId(null);
-    setAdding(false);
     setSaving(false);
   }
 
@@ -791,7 +791,12 @@ function MembersPanel() {
   async function handleToggleVisible(id: string) {
     const m = members.find(m => m.id === id)!;
     setSaving(true);
-    await upsertCommunityMember({ ...m, visible: !m.visible });
+    const { data: saved, error } = await upsertCommunityMember({ ...m, visible: !m.visible });
+    if (!saved) {
+      toast.error(`Failed to update member: ${error ?? 'Unknown database error'}`);
+      setSaving(false);
+      return;
+    }
     setMembers(prev => prev.map(m => m.id === id ? { ...m, visible: !m.visible } : m));
     setSaving(false);
     toast.success(!m.visible ? 'Member visible in directory' : 'Member hidden from directory');
@@ -1698,7 +1703,7 @@ export function AdminPage() {
 
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-8">
-        <div className="w-full max-w-md space-y-5 border border-accent/60 bg-background/70 p-8 text-center shadow-lg backdrop-blur-xl rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px]">
+        <div className="w-full max-w-md space-y-5 rounded-[4px] border border-foreground bg-background/70 p-8 text-center shadow-lg backdrop-blur-xl">
           <div className="space-y-2">
             <h2 className="text-2xl font-sans">Authorize Guardian Panel</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">

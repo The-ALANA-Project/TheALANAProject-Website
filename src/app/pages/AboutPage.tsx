@@ -1,9 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { Link } from 'react-router';
 import { HorizontalTimeline } from '../components/HorizontalTimeline';
 import { Footer } from '../components/Footer';
+import { HeroScrambleHeading } from '../components/HeroScrambleHeading';
 import { Seo } from '../components/Seo';
 import { siteConfig } from '../config/site';
+import { useHeroIntroSequence } from '../hooks/useHeroIntroSequence';
 import { optimizedImageSrcSet, optimizedImageUrl } from '../utils/image';
 
 interface Portrait {
@@ -269,6 +272,12 @@ const pullQuotes = [
 export function AboutPage() {
   const [quoteIndex, setQuoteIndex] = useState(0);
   const [quoteVisible, setQuoteVisible] = useState(true);
+  const {
+    shouldReduceMotion,
+    revealDescription,
+    descriptionVisible,
+    transition: heroRevealTransition,
+  } = useHeroIntroSequence();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -306,12 +315,23 @@ export function AboutPage() {
             <div className="relative z-10 flex items-center min-h-[80vh]">
               <div className="max-w-6xl mx-auto px-8 md:px-16 w-full">
                 <div className="space-y-4 max-w-3xl">
-                  <h1 className="text-4xl md:text-6xl font-medium text-white">
+                  <HeroScrambleHeading
+                    className="text-4xl md:text-6xl font-medium text-white"
+                    onComplete={revealDescription}
+                  >
                     The Story of ALANA
-                  </h1>
-                  <p className="text-lg md:text-xl text-[#F3F3F3]/90 max-w-2xl font-normal">
+                  </HeroScrambleHeading>
+                  <motion.p
+                    className="text-lg md:text-xl text-[#F3F3F3]/90 max-w-2xl font-normal"
+                    initial={{ y: shouldReduceMotion ? 0 : -24, opacity: 0 }}
+                    animate={{
+                      y: descriptionVisible || shouldReduceMotion ? 0 : -24,
+                      opacity: descriptionVisible || shouldReduceMotion ? 1 : 0,
+                    }}
+                    transition={heroRevealTransition}
+                  >
                     From a 3D avatar to a thriving Web3 creative community — this is how ALANA was born, grew, and became a home base for creators and builders around the world.
-                  </p>
+                  </motion.p>
                 </div>
               </div>
             </div>

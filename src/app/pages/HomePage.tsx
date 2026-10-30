@@ -1,10 +1,52 @@
-import { useNavigate } from 'react-router';
-import { SpaceGradient } from '../components/SpaceGradient';
-import { Footer } from '../components/Footer';
-import { Button } from '../components/ui/button';
+import { useCallback, useEffect, useState } from "react"
+import { motion, useReducedMotion } from "motion/react"
+import { useNavigate } from "react-router"
+import { SpaceGradient } from "../components/SpaceGradient"
+import { Footer } from "../components/Footer"
+import { Button } from "../components/ui/button"
+import { HeroScrambleHeading } from "../components/HeroScrambleHeading"
+import { HOME_INTRO_COMPLETE_EVENT } from "../config/events"
+
+type IntroStage = "heading" | "description" | "buttons" | "complete"
 
 export function HomePage() {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
+  const shouldReduceMotion = useReducedMotion()
+  const [introStage, setIntroStage] = useState<IntroStage>("heading")
+
+  const revealDescription = useCallback(() => {
+    setIntroStage("description")
+  }, [])
+
+  const revealButtons = useCallback(() => {
+    setIntroStage((current) =>
+      current === "description" ? "buttons" : current,
+    )
+  }, [])
+
+  const completeIntro = useCallback(() => {
+    setIntroStage((current) => {
+      if (current !== "buttons") return current
+      return "complete"
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!shouldReduceMotion) return
+    setIntroStage("complete")
+  }, [shouldReduceMotion])
+
+  useEffect(() => {
+    if (introStage === "complete") {
+      window.dispatchEvent(new Event(HOME_INTRO_COMPLETE_EVENT))
+    }
+  }, [introStage])
+
+  const descriptionVisible = introStage !== "heading"
+  const buttonsVisible = introStage === "buttons" || introStage === "complete"
+  const revealTransition = shouldReduceMotion
+    ? { duration: 0 }
+    : { duration: 0.55, ease: [0.22, 1, 0.36, 1] as const }
 
   return (
     <div className="flex min-h-[calc(100svh-5rem)] flex-1 flex-col">
@@ -17,28 +59,51 @@ export function HomePage() {
             <div className="mx-auto w-full max-w-6xl px-8 md:px-16">
               <div className="mx-auto flex max-w-3xl flex-col items-center space-y-8 sm:mx-0 sm:items-start">
                 <div className="space-y-4">
-                  <h1 className="text-center font-medium text-white sm:text-left">
-                    We empower Creators by guiding them into a world of novel technologies.
-                  </h1>
-                  <p className="mx-auto max-w-2xl text-center text-lg font-normal text-background/90 sm:mx-0 sm:text-left md:text-xl">
-                    We invite you on a journey outside the ordinary with the support of the ALANA community.
-                  </p>
+                  <HeroScrambleHeading
+                    className="text-center font-medium text-white sm:text-left"
+                    onComplete={revealDescription}
+                  >
+                    We empower Creators by guiding them into a world of novel
+                    technologies.
+                  </HeroScrambleHeading>
+                  <motion.p
+                    className="mx-auto max-w-2xl text-center text-lg font-normal text-background/90 sm:mx-0 sm:text-left md:text-xl"
+                    initial={{ y: shouldReduceMotion ? 0 : -24, opacity: 0 }}
+                    animate={{
+                      y: descriptionVisible || shouldReduceMotion ? 0 : -24,
+                      opacity: descriptionVisible || shouldReduceMotion ? 1 : 0,
+                    }}
+                    transition={revealTransition}
+                    onAnimationComplete={revealButtons}
+                  >
+                    We invite you on a journey outside the ordinary with the
+                    support of the ALANA community.
+                  </motion.p>
                 </div>
 
-                <div className="flex w-full max-w-sm flex-col items-stretch justify-start gap-4 sm:max-w-none sm:flex-row sm:items-start">
+                <motion.div
+                  className="flex w-full max-w-sm flex-col items-stretch justify-start gap-4 sm:max-w-none sm:flex-row sm:items-start"
+                  initial={{ y: shouldReduceMotion ? 0 : 24, opacity: 0 }}
+                  animate={{
+                    y: buttonsVisible || shouldReduceMotion ? 0 : 24,
+                    opacity: buttonsVisible || shouldReduceMotion ? 1 : 0,
+                  }}
+                  transition={revealTransition}
+                  onAnimationComplete={completeIntro}
+                >
                   <Button
-                    onClick={() => navigate('/knowledge-hub')}
+                    onClick={() => navigate("/knowledge-hub")}
                     className="h-11 w-full rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] border border-accent bg-accent px-6 font-sans text-sm font-medium text-accent-foreground shadow-lg backdrop-blur-sm hover:border-accent hover:bg-foreground hover:text-accent sm:w-auto"
                   >
                     Visit the Knowledge HUB
                   </Button>
                   <Button
-                    onClick={() => navigate('/products')}
+                    onClick={() => navigate("/products")}
                     className="h-11 w-full rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] border border-background/30 bg-background/5 px-6 font-sans text-sm font-medium text-background backdrop-blur-sm hover:border-accent hover:bg-background/5 hover:text-accent sm:w-auto"
                   >
                     Explore Our Products
                   </Button>
-                </div>
+                </motion.div>
               </div>
             </div>
           </div>
@@ -47,5 +112,5 @@ export function HomePage() {
 
       <Footer />
     </div>
-  );
+  )
 }

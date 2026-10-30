@@ -5,7 +5,7 @@ const SITE_URL = 'https://the-alana-project.xyz';
 const DEFAULT_DESCRIPTION =
   'A decentralised community project building the future of collaborative contribution. Join us, earn $ALANA, and help shape what comes next.';
 const DEFAULT_IMAGE =
-  'https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeif75lm7oj766gx2tzonozdk7eujvc22ub2vdm3sidnjnlyfzrxwka';
+  'https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeic2t2wzdzj7uing33sshx6ygvj76ci77gfbx3txetwgbmuh6civqy';
 
 interface SeoProps {
   /** Page title — SITE_NAME is appended automatically */
@@ -34,6 +34,7 @@ export function Seo({
 }: SeoProps) {
   const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
   const canonical = `${SITE_URL}${path}`;
+  const usesDefaultImage = image === DEFAULT_IMAGE;
 
   return (
     <Helmet>
@@ -48,8 +49,11 @@ export function Seo({
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={image} />
-      <meta property="og:image:width" content="1200" />
-      <meta property="og:image:height" content="630" />
+      <meta property="og:image:secure_url" content={image} />
+      {usesDefaultImage && <meta property="og:image:type" content="image/png" />}
+      {usesDefaultImage && <meta property="og:image:width" content="1200" />}
+      {usesDefaultImage && <meta property="og:image:height" content="630" />}
+      <meta property="og:image:alt" content={`${fullTitle} social preview`} />
       <meta property="og:url" content={canonical} />
 
       {/* Article-specific OG */}
@@ -62,6 +66,7 @@ export function Seo({
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={image} />
+      <meta name="twitter:image:alt" content={`${fullTitle} social preview`} />
     </Helmet>
   );
 }

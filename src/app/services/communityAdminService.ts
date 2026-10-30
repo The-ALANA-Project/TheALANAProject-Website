@@ -129,11 +129,17 @@ export async function fetchCommunityMembers(): Promise<CommunityMember[]> {
 
 export async function upsertCommunityMember(
   member: Omit<CommunityMember, 'id'> & { id?: string },
-): Promise<CommunityMember | null> {
+): Promise<{ data: CommunityMember | null; error: string | null }> {
   try {
-    return await mutateGuardianResource<CommunityMember>('upsert', 'members', member);
-  } catch {
-    return null;
+    return {
+      data: await mutateGuardianResource<CommunityMember>('upsert', 'members', member),
+      error: null,
+    };
+  } catch (error) {
+    return {
+      data: null,
+      error: error instanceof Error ? error.message : 'Unable to save member',
+    };
   }
 }
 
