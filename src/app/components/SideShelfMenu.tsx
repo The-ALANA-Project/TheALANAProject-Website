@@ -68,11 +68,10 @@ interface SideShelfMenuProps {
 
 export function SideShelfMenu({ isOpen, onClose, currentPath }: SideShelfMenuProps) {
   const navigate = useNavigate();
-  const { role, isAuthenticated, isConnected, address, isLoading, devRoleOverride, setDevRoleOverride } = useAuth();
+  const { role, isConnected, address, isLoading } = useAuth();
   const { open } = useAppKit();
   const { disconnect } = useDisconnect();
   const [walletExpanded, setWalletExpanded] = useState(false);
-  const [devOpen, setDevOpen] = useState(false);
   const walletRef = useRef<HTMLDivElement>(null);
 
   const RoleIcon = roleConfig[role].icon;
@@ -205,45 +204,6 @@ export function SideShelfMenu({ isOpen, onClose, currentPath }: SideShelfMenuPro
                       Disconnect
                     </button>
                   </div>
-
-                  {/* Dev role override */}
-                  {import.meta.env.DEV && (
-                    <>
-                      <div className="h-px bg-foreground" />
-                      <div>
-                        <button
-                          onClick={() => setDevOpen((o) => !o)}
-                          className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-mono text-muted-foreground hover:text-accent"
-                        >
-                          <span>DEV: {devRoleOverride ?? 'on-chain'}</span>
-                          <CaretDown className={`w-3 h-3 transition-transform ${devOpen ? 'rotate-180' : ''}`} />
-                        </button>
-                        {devOpen && (
-                          <div className="mt-1 space-y-1">
-                            <button
-                              onClick={() => setDevRoleOverride(null)}
-                              className={`w-full text-left text-xs font-mono px-2 py-1 rounded-tl-[2px] rounded-tr-none rounded-tl-[2px] rounded-tr-none rounded-br-[10px] rounded-bl-[2px] rounded-bl-[2px] ${
-                                devRoleOverride === null ? 'bg-accent/20 text-accent' : 'hover:bg-accent/10'
-                              }`}
-                            >
-                              off (use on-chain)
-                            </button>
-                            {(Object.keys(roleConfig) as UserRole[]).map((r) => (
-                              <button
-                                key={r}
-                                onClick={() => setDevRoleOverride(r)}
-                                className={`w-full text-left text-xs font-mono px-2 py-1 rounded-tl-[2px] rounded-tr-none rounded-tl-[2px] rounded-tr-none rounded-br-[10px] rounded-bl-[2px] rounded-bl-[2px] ${
-                                  devRoleOverride === r ? 'bg-accent/20 text-accent' : 'hover:bg-accent/10'
-                                }`}
-                              >
-                                force: {roleConfig[r].label}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
                 </div>
               )}
             </div>

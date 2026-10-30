@@ -11,7 +11,7 @@ export function BlogLoadingBar({ label }: BlogLoadingBarProps) {
     <div
       role="status"
       aria-live="polite"
-      className="w-full rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] border border-accent/70 bg-background/60 p-4 shadow-lg backdrop-blur-xl"
+      className="w-full rounded-[4px] border border-accent/70 bg-background/60 p-4 shadow-lg backdrop-blur-xl"
     >
       <div className="mb-3 flex items-center justify-between gap-4">
         <span className="font-mono text-[10px] uppercase tracking-widest text-foreground">
@@ -23,11 +23,11 @@ export function BlogLoadingBar({ label }: BlogLoadingBarProps) {
       </div>
 
       <div
-        className="relative h-2 overflow-hidden rounded-full border border-accent/60 bg-background/50 backdrop-blur-md"
+        className="relative h-2 overflow-hidden rounded-[4px] border border-accent/60 bg-background/50 backdrop-blur-md"
         aria-hidden="true"
       >
         <motion.div
-          className="absolute inset-y-0 left-0 w-1/3 rounded-full bg-accent shadow-lg"
+          className="absolute inset-y-0 left-0 w-1/3 rounded-[4px] bg-accent shadow-lg"
           initial={{ x: reduceMotion ? '0%' : '-110%' }}
           animate={{ x: reduceMotion ? '0%' : ['-110%', '310%'] }}
           transition={

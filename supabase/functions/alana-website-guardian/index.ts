@@ -14,6 +14,66 @@ const GUARDIAN_CONTRACT = "0x1093a86C1dcB9F8346ce7657C766802326598D8d";
 const SESSION_MINUTES = 30;
 const NONCE_MINUTES = 5;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const PARAGRAPH_CACHE_MS = 5 * 60_000;
+const PARAGRAPH_MAX_PAGES = 20;
+const PARAGRAPH_POSTS_URL =
+  "https://public.api.paragraph.com/api/v1/posts?publicationSlug=the-alana-project";
+
+let paragraphPostsCache: {
+  data: Record<string, unknown>[];
+  expiresAt: number;
+} | null = null;
+let paragraphPostsRequest: Promise<Record<string, unknown>[]> | null = null;
+
+const paragraphPostFields = [
+  "id",
+  "title",
+  "slug",
+  "url",
+  "canonicalUrl",
+  "subtitle",
+  "excerpt",
+  "description",
+  "content",
+  "contentHtml",
+  "body",
+  "html",
+  "imageUrl",
+  "coverImage",
+  "cover_image",
+  "image",
+  "thumbnail",
+  "publishedAt",
+  "published_at",
+  "createdAt",
+  "created_at",
+  "authorName",
+  "author_name",
+  "tags",
+] as const;
+
+function sanitizeParagraphPost(
+  post: Record<string, unknown>,
+): Record<string, unknown> {
+  const clean: Record<string, unknown> = {};
+  for (const field of paragraphPostFields) {
+    if (post[field] !== undefined) clean[field] = post[field];
+  }
+
+  if (Array.isArray(post.authors)) {
+    clean.authors = post.authors.flatMap((author) => {
+      if (!author || typeof author !== "object" || Array.isArray(author)) return [];
+      const value = author as Record<string, unknown>;
+      return [{
+        name: value.name,
+        avatarUrl: value.avatarUrl,
+        avatar_url: value.avatar_url,
+      }];
+    });
+  }
+
+  return clean;
+}
 
 const guardianAbi = [{
   inputs: [{ name: "_user", type: "address" }],
@@ -410,6 +470,82 @@ async function fetchAdminResource(resource: ManagedResource) {
   return query;
 }
 
+async function fetchParagraphPosts(): Promise<Record<string, unknown>[]> {
+  if (paragraphPostsCache && paragraphPostsCache.expiresAt > Date.now()) {
+    return paragraphPostsCache.data;
+  }
+  if (paragraphPostsRequest) return paragraphPostsRequest;
+
+  paragraphPostsRequest = (async () => {
+    const apiKey = Deno.env.get("PARAGRAPH_API_KEY")?.trim();
+    if (!apiKey) throw new Error("Paragraph API is not configured");
+
+    const posts: Record<string, unknown>[] = [];
+    const seenCursors = new Set<string>();
+    let cursor: string | null = null;
+
+    for (let pageNumber = 0; pageNumber < PARAGRAPH_MAX_PAGES; pageNumber += 1) {
+      const url = new URL(PARAGRAPH_POSTS_URL);
+      url.searchParams.set("limit", "50");
+      url.searchParams.set("includeContent", "true");
+      if (cursor) url.searchParams.set("cursor", cursor);
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          Accept: "application/json",
+        },
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!response.ok) {
+        throw new Error(`Paragraph API returned ${response.status}`);
+      }
+
+      const body = await response.json() as Record<string, unknown>;
+      const rawPage = Array.isArray(body.posts)
+        ? body.posts
+        : Array.isArray(body.items)
+        ? body.items
+        : [];
+      const page = rawPage
+        .filter((item): item is Record<string, unknown> =>
+          !!item && typeof item === "object" && !Array.isArray(item)
+        );
+      posts.push(...page.map(sanitizeParagraphPost));
+
+      const pagination =
+        body.pagination && typeof body.pagination === "object"
+          ? body.pagination as Record<string, unknown>
+          : {};
+      const nextCursorValue = pagination.nextCursor ?? pagination.cursor;
+      const nextCursor =
+        typeof nextCursorValue === "string" && nextCursorValue
+          ? nextCursorValue
+          : null;
+      const hasMore = pagination.hasMore === true;
+
+      if (!hasMore || page.length === 0 || !nextCursor || seenCursors.has(nextCursor)) {
+        break;
+      }
+      seenCursors.add(nextCursor);
+      cursor = nextCursor;
+    }
+
+    if (posts.length === 0) throw new Error("Paragraph API returned no posts");
+    paragraphPostsCache = {
+      data: posts,
+      expiresAt: Date.now() + PARAGRAPH_CACHE_MS,
+    };
+    return posts;
+  })();
+
+  try {
+    return await paragraphPostsRequest;
+  } finally {
+    paragraphPostsRequest = null;
+  }
+}
+
 const app = new Hono();
 app.use("*", logger(console.log));
 
@@ -545,6 +681,17 @@ app.post(`${ROUTE_PREFIX}/auth/verify`, async (c) => {
   if (sessionError) return jsonError(c, 500, "Unable to create Guardian session");
 
   return c.json({ token, walletAddress, expiresAt });
+});
+
+app.get(`${ROUTE_PREFIX}/public/blog-posts`, async (c) => {
+  try {
+    const data = await fetchParagraphPosts();
+    c.header("Cache-Control", "public, max-age=300, stale-while-revalidate=600");
+    return c.json({ data });
+  } catch (error) {
+    console.error("Unable to load Paragraph posts", error);
+    return jsonError(c, 503, "Blog feed is temporarily unavailable");
+  }
 });
 
 app.get(`${ROUTE_PREFIX}/public/:resource`, async (c) => {

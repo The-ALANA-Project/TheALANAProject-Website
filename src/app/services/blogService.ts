@@ -1,7 +1,5 @@
-import { projectId, publicAnonKey } from '../../../utils/supabase/info';
 import { fetchPublicResource } from './guardianApi';
 
-const BASE = `https://${projectId}.supabase.co/functions/v1/make-server-44fc6238`;
 const PARAGRAPH_RSS = 'https://api.paragraph.com/blogs/rss/@the-alana-project';
 
 // Fetches name→image_url map from community_members table, cached per session.
@@ -173,17 +171,10 @@ async function timedFetch(url: string, init?: RequestInit, timeoutMs = 7000): Pr
   return fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
 }
 
-// Single-page fetch via edge function then direct fallback (used by public blog)
+// Public RSS fallback used when the authenticated server-side feed is unavailable.
 async function fetchRssXml(): Promise<string> {
   try {
     const res = await timedFetch(`${PARAGRAPH_RSS}?limit=100`, undefined, 7000);
-    if (res.ok) return res.text();
-  } catch { /* fall through */ }
-
-  try {
-    const res = await timedFetch(`${BASE}/blog-feed`, {
-      headers: { Authorization: `Bearer ${publicAnonKey}` },
-    });
     if (res.ok) return res.text();
   } catch { /* fall through */ }
 
@@ -230,9 +221,15 @@ async function fetchSitemapEntries(): Promise<Array<{ url: string; lastmod: stri
 
 let cache: BlogPost[] | null = null;
 
-// Used by the public blog page — edge function first, fast.
+// Used by both the public index and individual article pages.
 export async function fetchBlogPosts(force = false): Promise<BlogPost[]> {
   if (cache && !force) return cache;
+  const fromApi = await fetchPostsFromParagraphApi();
+  if (fromApi && fromApi.length > 0) {
+    cache = fromApi;
+    return fromApi;
+  }
+
   const xml = await fetchRssXml();
   const doc = new DOMParser().parseFromString(xml, 'text/xml');
   const parsed = Array.from(doc.querySelectorAll('item')).map(parseRssItem) as BlogPost[];
@@ -283,52 +280,21 @@ function mapParagraphPost(p: Record<string, unknown>): BlogPost | null {
   };
 }
 
-// Try Paragraph's posts API directly, attempting known URL patterns until one works.
-async function fetchPostsFromParagraphApi(apiKey?: string): Promise<BlogPost[] | null> {
-  const headers: Record<string, string> = {};
-  if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
-
-  const BASE_CANDIDATES = [
-    'https://public.api.paragraph.com/api/v1/posts?publicationSlug=the-alana-project',
-  ];
-
-  for (const base of BASE_CANDIDATES) {
-    try {
-      const allPosts: BlogPost[] = [];
-      let cursor: string | undefined;
-      let hasMore = true;
-
-      while (hasMore) {
-        const url = new URL(base);
-        url.searchParams.set('limit', '50');
-        if (cursor) url.searchParams.set('cursor', cursor);
-
-        const res = await timedFetch(url.toString(), { headers }, 15000);
-        const text = await res.text();
-        if (!res.ok) break;
-
-        const data = JSON.parse(text) as Record<string, unknown>;
-        const page = (Array.isArray(data.items) ? data.items : []) as Record<string, unknown>[];
-        const mapped = page.map(mapParagraphPost).filter((p): p is BlogPost => p !== null);
-        allPosts.push(...mapped);
-
-        const pagination = data.pagination as Record<string, unknown> | undefined;
-        cursor  = pagination?.cursor as string | undefined;
-        hasMore = !!(pagination?.hasMore) && page.length > 0;
-      }
-
-      if (allPosts.length > 0) return allPosts;
-    } catch (err) {
-      console.error(`[blogService] paragraph-api error (${base}):`, err);
-    }
+// Fetch the complete Paragraph feed through the Edge Function so the API key
+// never enters the browser bundle.
+async function fetchPostsFromParagraphApi(): Promise<BlogPost[] | null> {
+  try {
+    const page = await fetchPublicResource<Record<string, unknown>>('blog-posts');
+    const mapped = page.map(mapParagraphPost).filter((p): p is BlogPost => p !== null);
+    if (mapped.length > 0) return attachAvatars(mapped);
+  } catch (err) {
+    console.error('[blogService] secure Paragraph feed unavailable:', err);
   }
   return null;
 }
 
 // Paragraph API → RSS fallback.
 export async function fetchAllBlogPosts(): Promise<BlogPost[]> {
-  const fromApi = await fetchPostsFromParagraphApi();
-  if (fromApi && fromApi.length > 0) return fromApi;
   return fetchBlogPosts(true);
 }
 

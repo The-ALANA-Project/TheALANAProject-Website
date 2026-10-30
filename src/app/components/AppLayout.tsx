@@ -2,13 +2,11 @@ import { useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 import { SideShelfMenu } from './SideShelfMenu';
 import { Toaster } from 'sonner';
-import { useAuth } from '../contexts/AuthContext';
 import { SidebarSimple, X } from '@phosphor-icons/react';
 
 export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { devModeEnabled, setDevModeEnabled } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -39,21 +37,6 @@ export function AppLayout() {
 
             {/* Right side */}
             <div className="flex items-center gap-3">
-              {/* Dev Mode Toggle */}
-              {import.meta.env.DEV && (
-                <button
-                  onClick={() => setDevModeEnabled(!devModeEnabled)}
-                  className={`text-xs font-mono px-3 py-1.5 rounded-tl-[2px] rounded-tr-none rounded-br-[10px] rounded-bl-[2px] border transition-colors ${
-                    devModeEnabled
-                      ? 'bg-accent/20 text-accent border-accent'
-                      : 'bg-background text-muted-foreground border-border hover:border-accent'
-                  }`}
-                  title="Toggle dev mode"
-                >
-                  DEV {devModeEnabled ? 'ON' : 'OFF'}
-                </button>
-              )}
-
               {/* Hamburger — all screen sizes */}
               <button
                 className="flex items-center justify-center w-10 h-10 text-foreground hover:text-accent transition-colors"

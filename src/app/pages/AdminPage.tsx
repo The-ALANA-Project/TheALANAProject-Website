@@ -30,16 +30,12 @@ import {
   fetchHubWebinars,
   upsertHubWebinar,
   deleteHubWebinar,
-  fetchHubOnboarding,
-  upsertHubOnboardingItem,
-  deleteHubOnboardingItem,
   type TickerItem,
   type CommunityMember,
   type StoryFlag,
   type CommunityTool,
   type ToolCategory,
   type HubWebinar,
-  type HubOnboardingItem,
 } from '../services/communityAdminService';
 
 // ── Blog Curation Panel ────────────────────────────────────────────────────
@@ -1439,10 +1435,6 @@ const WEBINAR_BLANK: Omit<HubWebinar, 'id'> = {
   thumbnail_url: null, event_date: null, active: true, display_order: null,
 };
 
-const ONBOARDING_BLANK: Omit<HubOnboardingItem, 'id'> = {
-  title: '', description: null, url: null, active: true, display_order: null,
-};
-
 function extractYouTubeId(url: string): string | null {
   const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|live\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
   return m ? m[1] : null;
@@ -1545,55 +1537,7 @@ function WebinarForm({
   );
 }
 
-function OnboardingForm({
-  values, onChange, onSave, onCancel, saving,
-}: {
-  values: Omit<HubOnboardingItem, 'id'> & { id?: string };
-  onChange: (v: typeof values) => void;
-  onSave: () => void;
-  onCancel: () => void;
-  saving: boolean;
-}) {
-  const inp = 'w-full bg-transparent font-sans text-sm border-b border-foreground/20 focus:border-foreground outline-none py-1 mt-1 placeholder:text-muted-foreground/40';
-  return (
-    <div className="border border-accent rounded-tl-[4px] rounded-tr-none rounded-br-[10px] rounded-bl-[4px] p-5 space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Title *</label>
-          <input value={values.title} onChange={e => onChange({ ...values, title: e.target.value })} placeholder="Step title" className={inp} />
-        </div>
-        <div>
-          <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">URL</label>
-          <input value={values.url ?? ''} onChange={e => onChange({ ...values, url: e.target.value || null })} placeholder="https://…" className={inp} />
-        </div>
-      </div>
-      <div>
-        <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Description</label>
-        <textarea value={values.description ?? ''} onChange={e => onChange({ ...values, description: e.target.value || null })} placeholder="What will the reader learn or do?" rows={2} className={`${inp} resize-none`} />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Display Order</label>
-          <input type="number" value={values.display_order ?? ''} onChange={e => onChange({ ...values, display_order: e.target.value ? Number(e.target.value) : null })} placeholder="0" className={inp} />
-        </div>
-        <div className="flex items-end pb-1">
-          <label className="flex items-center gap-2 cursor-pointer select-none font-mono text-xs text-muted-foreground">
-            <input type="checkbox" checked={values.active} onChange={e => onChange({ ...values, active: e.target.checked })} className="accent-foreground" />
-            Active
-          </label>
-        </div>
-      </div>
-      <div className="flex justify-end gap-2 pt-1">
-        <button onClick={onCancel} className="font-mono text-xs px-4 py-2 border border-foreground/20 rounded-[4px] hover:border-foreground transition-colors">Cancel</button>
-        <button onClick={onSave} disabled={saving || !values.title.trim()} className="font-mono text-xs px-4 py-2 bg-foreground text-background rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] hover:bg-accent hover:text-foreground transition-colors disabled:opacity-40">
-          {saving ? 'Saving…' : 'Save'}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-const HUB_SQL = `-- Run once in Supabase SQL Editor
+const WEBINAR_SQL = `-- Run once in Supabase SQL Editor
 create table if not exists hub_webinars (
   id uuid primary key default gen_random_uuid(),
   title text not null,
@@ -1605,20 +1549,7 @@ create table if not exists hub_webinars (
   active boolean not null default true,
   display_order integer
 );
-alter table hub_webinars disable row level security;
-
-create table if not exists hub_onboarding (
-  id uuid primary key default gen_random_uuid(),
-  title text not null,
-  description text,
-  url text,
-  active boolean not null default true,
-  display_order integer
-);
-alter table hub_onboarding disable row level security;`;
-
-const rowClass = (active: boolean) =>
-  `border rounded-tl-[4px] rounded-tr-none rounded-br-[10px] rounded-bl-[4px] p-4 transition-colors ${active ? 'border-foreground' : 'border-foreground/20 opacity-50'}`;
+alter table hub_webinars disable row level security;`;
 
 function WebinarsPanel() {
   const [webinars, setWebinars] = useState<HubWebinar[]>([]);
@@ -1659,7 +1590,7 @@ function WebinarsPanel() {
       {tableError && (
         <div className="border border-foreground/20 rounded-[4px] p-5 space-y-3">
           <p className="font-mono text-xs text-foreground/70">Table missing. Run this SQL in Supabase:</p>
-          <pre className="font-mono text-[11px] bg-foreground/5 rounded-[4px] p-4 overflow-x-auto whitespace-pre">{HUB_SQL}</pre>
+          <pre className="font-mono text-[11px] bg-foreground/5 rounded-[4px] p-4 overflow-x-auto whitespace-pre">{WEBINAR_SQL}</pre>
         </div>
       )}
 
@@ -1719,117 +1650,8 @@ function WebinarsPanel() {
   );
 }
 
-function OnboardingPanel() {
-  const [onboarding, setOnboarding] = useState<HubOnboardingItem[]>([]);
-  const [tableError, setTableError] = useState(false);
-  const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState<Omit<HubOnboardingItem, 'id'>>(ONBOARDING_BLANK);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState<HubOnboardingItem | null>(null);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    fetchHubOnboarding().then(({ ok, data }) => {
-      if (!ok) setTableError(true);
-      else setOnboarding(data);
-    });
-  }, []);
-
-  async function save(payload: Omit<HubOnboardingItem, 'id'> & { id?: string }) {
-    setSaving(true);
-    const { data, error } = await upsertHubOnboardingItem(payload);
-    setSaving(false);
-    if (error || !data) { toast.error(error ?? 'Save failed'); return false; }
-    setOnboarding(prev => payload.id ? prev.map(o => o.id === payload.id ? data : o) : [...prev, data]);
-    return true;
-  }
-
-  return (
-    <div className="space-y-3">
-      {tableError && (
-        <div className="border border-foreground/20 rounded-[4px] p-5 space-y-3">
-          <p className="font-mono text-xs text-foreground/70">Table missing. Run this SQL in Supabase:</p>
-          <pre className="font-mono text-[11px] bg-foreground/5 rounded-[4px] p-4 overflow-x-auto whitespace-pre">{HUB_SQL}</pre>
-        </div>
-      )}
-
-      {adding && (
-        <div className="mb-2">
-          <OnboardingForm values={draft} onChange={setDraft} saving={saving}
-            onCancel={() => setAdding(false)}
-            onSave={async () => { if (await save(draft)) { setAdding(false); setDraft(ONBOARDING_BLANK); } }}
-          />
-        </div>
-      )}
-
-      {onboarding.length === 0 && !adding && (
-        <p className="font-mono text-xs text-muted-foreground py-6 text-center border border-dashed border-foreground/15 rounded-[4px]">No onboarding steps yet.</p>
-      )}
-
-      {onboarding.map(o => (
-        <div key={o.id}>
-          {editingId === o.id && editDraft ? (
-            <OnboardingForm values={editDraft} onChange={value => setEditDraft(value as HubOnboardingItem)} saving={saving}
-              onCancel={() => { setEditingId(null); setEditDraft(null); }}
-              onSave={async () => { if (await save(editDraft)) { setEditingId(null); setEditDraft(null); } }}
-            />
-          ) : (
-            <div className={rowClass(o.active)}>
-              <div className="flex items-start gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="font-sans text-sm font-medium truncate">{o.title}</p>
-                  {o.description && <p className="font-mono text-[10px] text-muted-foreground leading-relaxed mt-0.5 line-clamp-2">{o.description}</p>}
-                </div>
-                <div className="flex gap-1 shrink-0">
-                  <button onClick={() => { setEditingId(o.id); setEditDraft(o); }} className="p-1.5 hover:text-accent transition-colors"><PencilSimple size={18} aria-hidden="true" /><span className="sr-only">Edit</span></button>
-                  <button onClick={async () => { await deleteHubOnboardingItem(o.id); setOnboarding(prev => prev.filter(x => x.id !== o.id)); }} className="p-1.5 hover:text-red-500 transition-colors"><Trash size={18} aria-hidden="true" /><span className="sr-only">Delete</span></button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      ))}
-
-      {!adding && !editingId && (
-        <button onClick={() => setAdding(true)}
-          className="mt-2 font-mono text-xs uppercase tracking-widest px-4 py-2.5 border border-foreground rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] hover:bg-[#262424] hover:text-accent hover:border-accent transition-colors"
-        >
-          Add step
-        </button>
-      )}
-    </div>
-  );
-}
-
-type HubSubTab = 'webinars' | 'onboarding';
-
 function HubPanel() {
-  const [subTab, setSubTab] = useState<HubSubTab>('webinars');
-  const subTabs: { id: HubSubTab; label: string }[] = [
-    { id: 'webinars',   label: 'Webinars' },
-    { id: 'onboarding', label: 'Onboarding' },
-  ];
-  return (
-    <div className="space-y-6">
-      <div className="flex gap-0 border-b border-foreground/10">
-        {subTabs.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setSubTab(t.id)}
-            className={`px-4 h-9 font-mono text-[11px] uppercase tracking-widest transition-colors ${
-              subTab === t.id
-                ? 'text-foreground border-b-2 border-foreground -mb-px'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-      {subTab === 'webinars'   && <WebinarsPanel />}
-      {subTab === 'onboarding' && <OnboardingPanel />}
-    </div>
-  );
+  return <WebinarsPanel />;
 }
 
 function ComingSoonPanel({ title, description }: { title: string; description: string }) {

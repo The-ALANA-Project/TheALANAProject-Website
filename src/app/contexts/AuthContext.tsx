@@ -24,59 +24,18 @@ interface AuthContextType {
   authorizeGuardian: () => Promise<void>;
   clearGuardianAuthorization: () => void;
   hasRole: (requiredRole: UserRole | UserRole[]) => boolean;
-  // Dev-only override: set non-null to force a role, null to use on-chain result.
-  devRoleOverride: UserRole | null;
-  setDevRoleOverride: (role: UserRole | null) => void;
-  // Dev-only: bypass wallet connection entirely
-  devModeEnabled: boolean;
-  setDevModeEnabled: (enabled: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const DEV_OVERRIDE_KEY = 'alana-dev-role-override';
-const DEV_MODE_KEY = 'alana-dev-mode-enabled';
-const DEV_MOCK_ADDRESS = '0x1234567890123456789012345678901234567890' as `0x${string}`;
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { address: walletAddress, isConnected: walletConnected } = useAccount();
+  const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
 
-  const [devRoleOverride, setDevRoleOverrideState] = useState<UserRole | null>(null);
-  const [devModeEnabled, setDevModeEnabledState] = useState(false);
   const [guardianSessionStatus, setGuardianSessionStatus] =
     useState<AuthContextType['guardianSessionStatus']>('idle');
   const [guardianSessionError, setGuardianSessionError] = useState<string | null>(null);
   const autoAuthorizationAttempt = useRef<string | null>(null);
-
-  // Use dev mode values if enabled in dev environment
-  const address = (import.meta.env.DEV && devModeEnabled) ? DEV_MOCK_ADDRESS : walletAddress;
-  const isConnected = (import.meta.env.DEV && devModeEnabled) ? true : walletConnected;
-
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-    const savedRole = localStorage.getItem(DEV_OVERRIDE_KEY) as UserRole | null;
-    if (savedRole && ['visitor', 'apprentice', 'specialist', 'guardian'].includes(savedRole)) {
-      setDevRoleOverrideState(savedRole);
-    }
-    const savedDevMode = localStorage.getItem(DEV_MODE_KEY) === 'true';
-    setDevModeEnabledState(savedDevMode);
-  }, []);
-
-  const setDevRoleOverride = (newRole: UserRole | null) => {
-    setDevRoleOverrideState(newRole);
-    if (newRole) localStorage.setItem(DEV_OVERRIDE_KEY, newRole);
-    else localStorage.removeItem(DEV_OVERRIDE_KEY);
-  };
-
-  const setDevModeEnabled = (enabled: boolean) => {
-    setDevModeEnabledState(enabled);
-    localStorage.setItem(DEV_MODE_KEY, String(enabled));
-    // Auto-enable guardian role when dev mode is enabled
-    if (enabled && !devRoleOverride) {
-      setDevRoleOverride('guardian');
-    }
-  };
 
   const { data, isLoading: isReading } = useReadContracts({
     allowFailure: true,
@@ -116,9 +75,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     else if (apprentice?.status === 'success' && apprentice.result === true) onChainRole = 'apprentice';
   }
 
-  const role: UserRole = devRoleOverride ?? onChainRole;
+  const role: UserRole = onChainRole;
   const isAuthenticated = role !== 'visitor';
-  const isLoading = isConnected && isReading && !devRoleOverride;
+  const isLoading = isConnected && isReading;
 
   const hasRole = (requiredRole: UserRole | UserRole[]) => {
     if (Array.isArray(requiredRole)) return requiredRole.includes(role);
@@ -225,10 +184,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         authorizeGuardian,
         clearGuardianAuthorization,
         hasRole,
-        devRoleOverride,
-        setDevRoleOverride,
-        devModeEnabled,
-        setDevModeEnabled,
       }}
     >
       {children}
