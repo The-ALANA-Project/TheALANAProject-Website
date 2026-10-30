@@ -104,6 +104,11 @@ export async function fetchPublicResource<T>(
   return response.data;
 }
 
+export async function fetchPublicItem<T>(resource: string): Promise<T> {
+  const response = await apiRequest<{ data: T }>(`/public/${resource}`);
+  return response.data;
+}
+
 export async function fetchGuardianResource<T>(resource: string): Promise<T[]> {
   const response = await apiRequest<{ data: T[] }>(`/admin/${resource}`, {}, true);
   return response.data;

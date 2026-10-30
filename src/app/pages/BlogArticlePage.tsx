@@ -5,6 +5,7 @@ import { Seo } from '../components/Seo';
 import { BlogLoadingBar } from '../components/BlogLoadingBar';
 import {
   fetchBlogPosts,
+  fetchBlogPostContent,
   lookupMemberAvatar,
   getAuthorInitials,
   formatPubDate,
@@ -48,17 +49,19 @@ export function BlogArticlePage() {
     if (!slug) return;
     setLoading(true);
     setError(null);
-    // RSS feed for full article content, community_members for avatar — two independent sources.
     fetchBlogPosts()
       .then(async (posts) => {
         const found = posts.find((p) => p.slug === slug)
           ?? posts.find((p) => p.slug.toLowerCase() === slug?.toLowerCase())
           ?? posts.find((p) => p.originalUrl.endsWith(`/${slug}`));
         if (!found) throw new Error('Article not found');
-        // Show the article immediately, then hydrate avatar in the background.
-        setPost(found);
-        if (!found.authorAvatarUrl) {
-          const avatarUrl = await lookupMemberAvatar(found.author);
+
+        const contentHtml = found.contentHtml || await fetchBlogPostContent(found.slug);
+        const hydratedPost = { ...found, contentHtml };
+        setPost(hydratedPost);
+
+        if (!hydratedPost.authorAvatarUrl) {
+          const avatarUrl = await lookupMemberAvatar(hydratedPost.author);
           if (avatarUrl) setPost((prev) => prev ? { ...prev, authorAvatarUrl: avatarUrl } : prev);
         }
       })
@@ -211,6 +214,61 @@ export function BlogArticlePage() {
                 border: none !important;
                 border-radius: 0 !important;
                 margin: 0 !important;
+              }
+              .article-body .paragraph-preview-card {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr);
+                width: 100%;
+                overflow: hidden;
+                border: 1px solid var(--foreground);
+                border-radius: 8px;
+                margin: 1.5rem 0;
+                color: var(--foreground);
+                text-decoration: none;
+                background: var(--background);
+                transition: border-color 200ms ease;
+              }
+              .article-body .paragraph-preview-card:hover {
+                border-color: var(--accent);
+              }
+              .article-body .paragraph-preview-image {
+                display: block;
+                width: 100%;
+                height: auto;
+                aspect-ratio: 2 / 1;
+                object-fit: cover;
+                border: 0;
+                border-radius: 0;
+                margin: 0;
+              }
+              .article-body .paragraph-preview-content {
+                display: flex;
+                min-width: 0;
+                flex-direction: column;
+                justify-content: center;
+                gap: 0.5rem;
+                padding: 1.25rem;
+              }
+              .article-body .paragraph-preview-kicker,
+              .article-body .paragraph-preview-action {
+                font-family: var(--font-mono);
+                font-size: 0.625rem;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--muted-foreground);
+              }
+              .article-body .paragraph-preview-title {
+                font-size: 1.125rem;
+                line-height: 1.35;
+              }
+              @media (min-width: 640px) {
+                .article-body .paragraph-preview-card {
+                  grid-template-columns: minmax(14rem, 40%) minmax(0, 1fr);
+                }
+                .article-body .paragraph-preview-image {
+                  height: 100%;
+                  aspect-ratio: auto;
+                }
               }
             `}</style>
             <div

@@ -1713,7 +1713,11 @@ export function AdminPage() {
             onClick={() => authorizeGuardian().catch(() => undefined)}
             className="h-11 w-full rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] border border-accent bg-accent px-6 text-accent-foreground shadow-lg hover:bg-foreground hover:text-accent"
           >
-            {busy ? 'Verifying membership…' : 'Sign in as Guardian'}
+            {busy
+              ? 'Verifying membership…'
+              : guardianSessionStatus === 'error'
+              ? 'Reconnect Guardian Session'
+              : 'Sign in as Guardian'}
           </Button>
           {guardianSessionError && (
             <p className="font-mono text-xs text-destructive">{guardianSessionError}</p>

@@ -6,6 +6,8 @@ import { Button } from '../components/ui/button';
 import { siteConfig } from '../config/site';
 import { fetchBlogPosts, BlogPost, getAuthorInitials, formatPubDate } from '../services/blogService';
 import { fetchTickerItems, fetchStoryFlags, fetchCommunityMembers, fetchCommunityTools, type CommunityMember, type CommunityTool } from '../services/communityAdminService';
+import { optimizedImageSrcSet, optimizedImageUrl } from '../utils/image';
+import { Plus } from '@phosphor-icons/react';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface Member {
@@ -125,10 +127,13 @@ function EventPhotoCard({ index }: { index: number }) {
         {EVENT_PHOTOS[index] ? (
           <>
             <img
-              src={EVENT_PHOTOS[index]}
+              src={optimizedImageUrl(EVENT_PHOTOS[index], 640)}
+              srcSet={optimizedImageSrcSet(EVENT_PHOTOS[index], [320, 480, 640, 760])}
+              sizes="(max-width: 767px) 80vw, 480px"
               alt={`Community moment ${index + 1}`}
               className="h-full w-auto block"
               loading="lazy"
+              decoding="async"
             />
             <div
               className="absolute inset-0 pointer-events-none"
@@ -157,7 +162,7 @@ function EventPhotoCard({ index }: { index: number }) {
 function MemberCard({ member }: { member: Member }) {
   const initials = member.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   return (
-    <div className="group border border-foreground rounded-[8px] p-5 flex flex-col gap-4 bg-background">
+    <div className="group flex h-full flex-col gap-4 rounded-[8px] border border-foreground bg-background p-5">
       <div
         className={`aspect-square w-full overflow-hidden rounded-[4px] ${
           member.active
@@ -268,10 +273,7 @@ export function CommunityPage() {
   const [quoteIndex, setQuoteIndex] = useState(0);
   const [quoteVisible, setQuoteVisible] = useState(true);
   const [search, setSearch] = useState('');
-  const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [visibleMemberCount, setVisibleMemberCount] = useState(3);
-  const [filterOpen, setFilterOpen] = useState(false);
-  const filterRef = useRef<HTMLDivElement>(null);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [liveTickerItems, setLiveTickerItems] = useState<string[]>([]);
   const [liveMembers, setLiveMembers] = useState<CommunityMember[] | null>(null);
@@ -296,17 +298,6 @@ export function CommunityPage() {
       }, 600);
     }, 8000);
     return () => clearInterval(interval);
-  }, []);
-
-  // Close filter dropdown on outside click
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
-        setFilterOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
   // Fetch live members managed through the Guardian Panel.
@@ -373,22 +364,17 @@ export function CommunityPage() {
   // Filter members
   const filteredMembers = resolvedMembers.filter(m => {
     const q = search.toLowerCase();
-    const matchesSearch = !q ||
+    return !q ||
       m.name.toLowerCase().includes(q) ||
       m.role.toLowerCase().includes(q) ||
       m.team.toLowerCase().includes(q) ||
       m.skills.some(s => s.toLowerCase().includes(q));
-    const matchesStatus =
-      activeFilter === 'all' ||
-      (activeFilter === 'active' && m.active) ||
-      (activeFilter === 'inactive' && !m.active);
-    return matchesSearch && matchesStatus;
   });
   const visibleMembers = filteredMembers.slice(0, visibleMemberCount);
 
   useEffect(() => {
     setVisibleMemberCount(3);
-  }, [search, activeFilter]);
+  }, [search]);
 
   const allTicker = [...liveTickerItems, ...liveTickerItems];
 
@@ -407,7 +393,7 @@ export function CommunityPage() {
     : internalStack.map(t => ({ ...t, id: t.name, description: null, author: null, category: 'internal_stack' as const, active: true, display_order: null }));
 
   return (
-    <>
+    <div className="w-full max-w-full overflow-x-clip">
       <Seo
         title="Community"
         description="Meet the ALANA community — members, stories, resources, and a living directory of contributors from around the world."
@@ -566,7 +552,7 @@ export function CommunityPage() {
           </p>
         </div>
         <div
-          className="flex flex-row gap-5 overflow-x-auto pt-10 pb-16 scroll-inset-l pr-8 md:pr-16"
+          className="flex w-full max-w-full flex-row gap-5 overflow-x-auto overscroll-x-contain pt-10 pb-16 scroll-inset-l pr-8 md:pr-16"
           style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(220,194,254,0.3) transparent' }}
         >
           {shuffledPhotoIndices.map((photoIdx, i) => (
@@ -616,15 +602,14 @@ export function CommunityPage() {
 
       {/* ── Member Directory ──────────────────────────────────────────────── */}
       <section className="w-full bg-background py-20">
-        <div className="w-full max-w-6xl mx-auto px-8 md:px-16">
+        <div className="mx-auto w-full max-w-6xl px-8 md:px-16">
           <h2 className="mb-2">Member Directory</h2>
           <p className="text-muted-foreground text-base md:text-lg max-w-2xl mb-10 leading-relaxed">
             Active and inactive members of the ALANA ecosystem, searchable by name, role, team, or skill.
           </p>
 
-          {/* Search + filters */}
-          <div className="flex gap-3 items-stretch mb-8">
-            <div className="flex-1 flex items-center gap-2.5 px-4 border border-foreground rounded-[4px]">
+          <div className="mb-8 flex items-stretch">
+            <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-[4px] border border-foreground px-4">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 256 256" className="text-muted-foreground shrink-0 fill-current">
                 <path d="M229.66,218.34l-50.07-50.07a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.31ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"/>
               </svg>
@@ -633,7 +618,7 @@ export function CommunityPage() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search by name, role, branch, or skill…"
-                className="flex-1 font-mono text-xs py-3 bg-transparent placeholder:text-muted-foreground focus:outline-none"
+                className="min-w-0 flex-1 bg-transparent py-3 font-mono text-xs placeholder:text-muted-foreground focus:outline-none"
               />
               {search && (
                 <button
@@ -646,52 +631,38 @@ export function CommunityPage() {
                 </button>
               )}
             </div>
-            <div ref={filterRef} className="relative">
-              <button
-                onClick={() => setFilterOpen(o => !o)}
-                className="flex items-center gap-3 font-mono text-xs pl-4 pr-4 py-3 h-full border border-foreground rounded-[4px] bg-background text-foreground focus:outline-none cursor-pointer whitespace-nowrap"
-              >
-                {activeFilter === 'all' ? 'All members' : activeFilter === 'active' ? 'Active' : 'Inactive'}
-                <span className="text-[9px]">▾</span>
-              </button>
-              {filterOpen && (
-                <div className="absolute right-0 top-[calc(100%+4px)] z-50 bg-background border border-foreground rounded-[4px] overflow-hidden min-w-full shadow-md">
-                  {(['all', 'active', 'inactive'] as const).map(opt => (
-                    <button
-                      key={opt}
-                      onClick={() => { setActiveFilter(opt); setFilterOpen(false); }}
-                      className={`w-full text-left font-mono text-xs px-4 py-2.5 hover:bg-foreground hover:text-background transition-colors ${activeFilter === opt ? 'bg-accent text-[#262424]' : ''}`}
-                    >
-                      {opt === 'all' ? 'All members' : opt === 'active' ? 'Active' : 'Inactive'}
-                    </button>
-                  ))}
+          </div>
+        </div>
+
+        {filteredMembers.length > 0 ? (
+          <div
+            className="w-full max-w-full overflow-x-auto overscroll-x-contain"
+            style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(38,36,36,0.2) transparent' }}
+          >
+            <div className="flex w-max snap-x snap-mandatory items-stretch gap-4 scroll-inset-l pr-8 pb-4 md:pr-16">
+              {visibleMembers.map((member) => (
+                <div key={member.name} className="w-[calc(100vw-4rem)] shrink-0 snap-start md:w-[300px]">
+                  <MemberCard member={member} />
                 </div>
+              ))}
+              {visibleMemberCount < filteredMembers.length && (
+                <Button
+                  type="button"
+                  onClick={() => setVisibleMemberCount(count => count + 3)}
+                  className="h-auto min-h-48 w-[180px] shrink-0 snap-start flex-col rounded-[8px] border border-dashed border-foreground/30 bg-transparent px-6 text-foreground/60 shadow-none hover:border-accent hover:bg-accent/10 hover:text-foreground"
+                  aria-label="Show more members"
+                >
+                  <span className="flex size-10 items-center justify-center rounded-full border border-dashed border-current">
+                    <Plus className="size-5" aria-hidden="true" />
+                  </span>
+                  <span className="font-mono text-xs">Show 3 more</span>
+                </Button>
               )}
             </div>
           </div>
-
-          {filteredMembers.length > 0 ? (
-            <>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {visibleMembers.map((m, i) => <MemberCard key={i} member={m} />)}
-              </div>
-              {visibleMemberCount < filteredMembers.length && (
-                <div className="flex justify-end pt-8">
-                  <Button
-                    type="button"
-                    size="lg"
-                    onClick={() => setVisibleMemberCount(count => count + 3)}
-                    className="h-11 rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] border border-accent bg-accent px-6 text-accent-foreground shadow-lg backdrop-blur-sm hover:border-accent hover:bg-foreground hover:text-accent"
-                  >
-                    Load more members
-                  </Button>
-                </div>
-              )}
-            </>
-          ) : (
-            <p className="font-mono text-sm text-muted-foreground py-12 text-center">No members match your search.</p>
-          )}
-        </div>
+        ) : (
+          <p className="px-8 py-12 text-center font-mono text-sm text-muted-foreground md:px-16">No members match your search.</p>
+        )}
       </section>
 
       {/* ── Community Stories ─────────────────────────────────────────────── */}
@@ -710,7 +681,7 @@ export function CommunityPage() {
 
         {blogPosts.length > 0 ? (
           <div
-            className="overflow-x-auto"
+            className="w-full max-w-full overflow-x-auto overscroll-x-contain"
             style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(38,36,36,0.2) transparent' }}
           >
             <div className="flex gap-6 scroll-inset-l pr-8 md:pr-16" style={{ width: 'max-content', paddingBottom: '16px' }}>
@@ -723,7 +694,7 @@ export function CommunityPage() {
           </div>
         ) : (
           <div
-            className="overflow-x-auto"
+            className="w-full max-w-full overflow-x-auto overscroll-x-contain"
             style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(38,36,36,0.2) transparent' }}
           >
             <div className="flex gap-6 scroll-inset-l pr-8 md:pr-16" style={{ width: 'max-content', paddingBottom: '16px' }}>
@@ -744,7 +715,7 @@ export function CommunityPage() {
       </section>
 
       {/* ── Community Resources ───────────────────────────────────────────── */}
-      <section className="w-full bg-background py-20">
+      <section className="w-full overflow-x-clip bg-background pt-20 pb-12">
         {/* Section header */}
         <div className="w-full max-w-6xl mx-auto px-8 md:px-16 mb-8">
           <h2 className="mb-2">Community Resources</h2>
@@ -762,7 +733,7 @@ export function CommunityPage() {
             </div>
           </div>
           <div
-            className="overflow-x-auto"
+            className="w-full max-w-full overflow-x-auto overscroll-x-contain"
             style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(220,194,254,0.4) transparent' }}
           >
             <div className="flex gap-2 scroll-inset-l pr-8 md:pr-16" style={{ width: 'max-content', paddingBottom: '16px' }}>
@@ -791,7 +762,7 @@ export function CommunityPage() {
               <span className="font-mono text-xs text-muted-foreground text-[#262424b3] opacity-70">Official tools from the project</span>
             </div>
           </div>
-          <div className="overflow-x-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(220,194,254,0.4) transparent' }}>
+          <div className="w-full max-w-full overflow-x-auto overscroll-x-contain" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(220,194,254,0.4) transparent' }}>
             <div className="flex gap-4 scroll-inset-l pr-8 md:pr-16" style={{ width: 'max-content', paddingBottom: '16px' }}>
               {resolvedAlanaTools.map(tool => (
                 <div
@@ -853,14 +824,14 @@ export function CommunityPage() {
         </div>
 
         {/* Row 2 — Built by community */}
-        <div className="mb-12">
+        <div>
           <div className="w-full max-w-6xl mx-auto px-8 md:px-16 mb-5">
             <div className="flex items-baseline gap-3">
               <span className="font-sans text-[18px] font-medium text-foreground">Built by our community</span>
               <span className="font-mono text-xs text-muted-foreground opacity-70">Tools members have independently created</span>
             </div>
           </div>
-          <div className="overflow-x-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(220,194,254,0. text-[#262424b3]4) transparent' }}>
+          <div className="w-full max-w-full overflow-x-auto overscroll-x-contain" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(220,194,254,0.4) transparent' }}>
             <div className="flex gap-4 scroll-inset-l pr-8 md:pr-16" style={{ width: 'max-content', paddingBottom: '16px' }}>
               {resolvedCommunityTools.map(tool => {
                 return (
@@ -942,12 +913,12 @@ export function CommunityPage() {
       </section>
 
       {/* ── Telegram CTA ──────────────────────────────────────────────────── */}
-      <section className="w-full mt-12 mb-0">
+      <section className="w-full mb-0">
         <div className="relative w-full min-h-[35vh] overflow-hidden group" style={{ background: '#DCC2FE' }}>
           <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-700 group-hover:scale-105"
             style={{
-              backgroundImage: `url(https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeido2glqw574c5kxquhgythghbnchqibzbvvr6exxshlfve5ldsnd4)`,
+              backgroundImage: `url(${optimizedImageUrl('https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeido2glqw574c5kxquhgythghbnchqibzbvvr6exxshlfve5ldsnd4', 1920)})`,
               mixBlendMode: 'luminosity',
             opacity: 0.6,
             }}
@@ -974,6 +945,6 @@ export function CommunityPage() {
       </section>
 
       <Footer />
-    </>
+    </div>
   );
 }

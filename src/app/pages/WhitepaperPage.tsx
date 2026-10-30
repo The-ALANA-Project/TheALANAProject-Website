@@ -326,7 +326,7 @@ export function WhitepaperPage() {
       <div className="min-h-[calc(100vh-160px)] w-full px-8 md:px-16 max-w-6xl mx-auto py-20">
         <header className="mb-16">
           <p className="font-mono text-sm text-muted-foreground mb-2">The ALANA Project</p>
-          <h1 className="leading-tight">Whitepaper 0.3</h1>
+          <h1 className="font-sans text-2xl font-medium leading-normal">Whitepaper 0.3</h1>
           <p className="mt-4 text-base md:text-lg text-muted-foreground max-w-2xl leading-relaxed">
             A Community-Governed Ecosystem for Creator Sovereignty
           </p>

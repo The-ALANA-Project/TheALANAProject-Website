@@ -4,10 +4,13 @@ import { HorizontalTimeline } from '../components/HorizontalTimeline';
 import { Footer } from '../components/Footer';
 import { Seo } from '../components/Seo';
 import { siteConfig } from '../config/site';
+import { optimizedImageSrcSet, optimizedImageUrl } from '../utils/image';
 
 interface Portrait {
   imageUrl: string;
   caption: string;
+  videoUrl?: string;
+  posterUrl?: string;
 }
 
 const portraits: Portrait[] = [
@@ -26,7 +29,12 @@ const portraits: Portrait[] = [
   { imageUrl: 'https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeibncodnbqrzqbouv7jkls5hydy2vv22r54s547umskeyjf4nzfzf4', caption: 'Thanks to Paola, ALANA even became part of an academic thesis.' },
   { imageUrl: 'https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeieq6v3amvaq3cyb5nhdz7myel4aosbrbaz4hyomzbfyk2caqhru6u', caption: 'Catherine put ALANA in the midst of a protest styled as a fashion editorial giving a voice to a cause that needs one.' },
   { imageUrl: 'https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeiasqdlisv4krciljiadvxkdsuxbjax4n46aoppufpfppzx73hxq5i', caption: 'ALANA Dracarys was brought to life by Tânia, Lillian and Stella.' },
-  { imageUrl: 'https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeifiicjum3xycakjwa36xgbv3xpwnoidjg3gw2i46rtzixekgj2ef4', caption: "Heej, Zoe and Stella created the first version of Earendel Chateau, ALANA's elaborate space ship with an energy core from which ALANA could power the entire ship." },
+  {
+    imageUrl: 'https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeifiicjum3xycakjwa36xgbv3xpwnoidjg3gw2i46rtzixekgj2ef4',
+    videoUrl: `${import.meta.env.BASE_URL}media/earendel-chateau.webm`,
+    posterUrl: `${import.meta.env.BASE_URL}media/earendel-chateau-poster.webp`,
+    caption: "Heej, Zoe and Stella created the first version of Earendel Chateau, ALANA's elaborate space ship with an energy core from which ALANA could power the entire ship.",
+  },
   { imageUrl: 'https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeibdql7zv4q6bitjngqqqgw7ntne7du44adytbb6vcobtsn6qlju24', caption: 'The rebranding transforms ALANA from a personal avatar to a community-driven persona, following brand guidelines by Klaus, Kirsty, Gonzalo and Stella.' },
   { imageUrl: 'https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeigo5apqzhlsmjzr57bniyslvborrtt6c2zaxytdn4r5exed5rtxs4', caption: 'How will the next version of ALANA look like? Ana, Jessica and Stella all had their hands on that new version considering the new community branding for ALANA.' },
 ];
@@ -131,11 +139,30 @@ function FloatingGalleryCard({ portrait, index }: { portrait: Portrait; index: n
         }}
         className="relative overflow-hidden cursor-pointer rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px]"
       >
-        <img
-          src={portrait.imageUrl}
-          alt={`ALANA ${index + 1}`}
-          className="h-full w-auto block"
-        />
+        {portrait.videoUrl ? (
+          <video
+            src={portrait.videoUrl}
+            poster={portrait.posterUrl}
+            aria-label={`ALANA ${index + 1}`}
+            className="h-full w-auto block"
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            disablePictureInPicture
+          />
+        ) : (
+          <img
+            src={optimizedImageUrl(portrait.imageUrl, 640)}
+            srcSet={optimizedImageSrcSet(portrait.imageUrl, [320, 480, 640, 760])}
+            sizes="(max-width: 767px) 80vw, 480px"
+            alt={`ALANA ${index + 1}`}
+            className="h-full w-auto block"
+            loading="lazy"
+            decoding="async"
+          />
+        )}
 
         <div
           className="absolute inset-0 pointer-events-none"
@@ -263,9 +290,17 @@ export function AboutPage() {
         <section className="w-full">
           <div className="relative w-full min-h-[80vh] overflow-hidden">
             <img
-              src="https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeidm2g3gnn5zezkpajalnmkbc2mshoqdonyz3g2q2tqglzaqkpdx4i"
+              src={optimizedImageUrl('https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeidm2g3gnn5zezkpajalnmkbc2mshoqdonyz3g2q2tqglzaqkpdx4i', 1920, 82)}
+              srcSet={optimizedImageSrcSet(
+                'https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeidm2g3gnn5zezkpajalnmkbc2mshoqdonyz3g2q2tqglzaqkpdx4i',
+                [768, 1280, 1920, 2560],
+                82,
+              )}
+              sizes="100vw"
               alt="ALANA"
               className="absolute inset-0 w-full h-full object-cover object-top"
+              fetchPriority="high"
+              decoding="async"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-[#262424]/90 via-[#1a1020]/70 to-transparent" />
             <div className="relative z-10 flex items-center min-h-[80vh]">
@@ -331,28 +366,32 @@ export function AboutPage() {
 
         {/* ── Who Is ALANA + Floating Gallery ── */}
         <section className="w-full bg-background py-14" style={{ overflowX: 'clip' }}>
-          <div className="mx-auto pl-8 md:pl-16 pr-0">
-            <h2 className="text-2xl md:text-3xl font-medium mb-4">Who Is ALANA?</h2>
-            <p className="text-muted-foreground text-base md:text-lg max-w-4xl mb-14 leading-relaxed">
-              ALANA is a digital persona at the centre of our tech-forward Web3 community. Her journey evolved from a digital fashion model to a character owning her own storyline — spanning protocol collaborations, immersive storytelling, and building bridges between creators and decentralised technology.
-            </p>
+          <div>
+            <div className="mx-auto max-w-6xl px-8 md:px-16">
+              <h2 className="text-2xl md:text-3xl font-medium mb-4">Who Is ALANA?</h2>
+              <p className="text-muted-foreground text-base md:text-lg max-w-4xl mb-14 leading-relaxed">
+                ALANA is a digital persona at the centre of our tech-forward Web3 community. Her journey evolved from a digital fashion model to a character owning her own storyline — spanning protocol collaborations, immersive storytelling, and building bridges between creators and decentralised technology.
+              </p>
+            </div>
 
-            <div
-              className="flex flex-row gap-5 overflow-x-auto pt-10 pb-16 pl-3 pr-8 md:pr-16"
-              style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(220,194,254,0.3) transparent' }}
-            >
-              {portraits.map((p, i) => {
-                const staggerPx = [0, 36, 18];
-                return (
-                  <div
-                    key={i}
-                    className="flex-shrink-0"
-                    style={{ marginTop: staggerPx[i % 3] }}
-                  >
-                    <FloatingGalleryCard portrait={p} index={i} />
-                  </div>
-                );
-              })}
+            <div className="pl-8 md:pl-16">
+              <div
+                className="flex flex-row gap-5 overflow-x-auto pt-10 pb-16 pl-3 pr-8 md:pr-16"
+                style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(220,194,254,0.3) transparent' }}
+              >
+                {portraits.map((p, i) => {
+                  const staggerPx = [0, 36, 18];
+                  return (
+                    <div
+                      key={i}
+                      className="flex-shrink-0"
+                      style={{ marginTop: staggerPx[i % 3] }}
+                    >
+                      <FloatingGalleryCard portrait={p} index={i} />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </section>
@@ -385,9 +424,13 @@ export function AboutPage() {
                   {card.image ? (
                     <div className="w-full aspect-square overflow-hidden">
                       <img
-                        src={card.image}
+                        src={optimizedImageUrl(card.image, 640)}
+                        srcSet={optimizedImageSrcSet(card.image, [320, 480, 640])}
+                        sizes="(max-width: 767px) calc(100vw - 4rem), 320px"
                         alt={card.label}
                         className="w-full h-full object-cover object-center"
+                        loading="lazy"
+                        decoding="async"
                       />
                     </div>
                   ) : (
@@ -428,7 +471,7 @@ export function AboutPage() {
             <div
               className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-700 group-hover:scale-105"
               style={{
-                backgroundImage: `url(https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeido2glqw574c5kxquhgythghbnchqibzbvvr6exxshlfve5ldsnd4)`,
+                backgroundImage: `url(${optimizedImageUrl('https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeido2glqw574c5kxquhgythghbnchqibzbvvr6exxshlfve5ldsnd4', 1920)})`,
                 mixBlendMode: 'luminosity',
                 opacity: 0.6,
               }}

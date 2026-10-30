@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 import { SideShelfMenu } from './SideShelfMenu';
+import { CookieConsent } from './CookieConsent';
 import { Toaster } from 'sonner';
 import { SidebarSimple, X } from '@phosphor-icons/react';
 
@@ -9,9 +10,19 @@ export function AppLayout() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    const resetScroll = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+
     setMenuOpen(false);
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    resetScroll();
+
+    // Run once more after the destination page has completed its first layout.
+    const frame = window.requestAnimationFrame(resetScroll);
+    return () => window.cancelAnimationFrame(frame);
   }, [location.pathname]);
 
   return (
@@ -58,9 +69,11 @@ export function AppLayout() {
       />
 
       {/* ── Page Content ────────────────────────────────────────────────── */}
-      <main role="main" className="flex-1 flex flex-col">
+      <main role="main" className="flex w-full min-w-0 flex-1 flex-col overflow-x-clip">
         <Outlet />
       </main>
+
+      <CookieConsent />
 
 {/* ── Toast Notifications ─────────────────────────────────────────── */}
       <Toaster />

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
 import { useAccount, useReadContracts, useSignMessage } from 'wagmi';
 import { optimism } from '@reown/appkit/networks';
 import { NFT_CONTRACTS, unlockKeyAbi } from '../config/web3';
@@ -35,7 +35,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [guardianSessionStatus, setGuardianSessionStatus] =
     useState<AuthContextType['guardianSessionStatus']>('idle');
   const [guardianSessionError, setGuardianSessionError] = useState<string | null>(null);
-  const autoAuthorizationAttempt = useRef<string | null>(null);
 
   const { data, isLoading: isReading } = useReadContracts({
     allowFailure: true,
@@ -123,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const handleSessionCleared = () => {
       setGuardianSessionStatus('idle');
-      setGuardianSessionError('Guardian authorization expired. Please sign in again.');
+      setGuardianSessionError('Guardian authorization expired. Reconnect when you are ready.');
     };
     window.addEventListener('alana-guardian-session-cleared', handleSessionCleared);
     return () => window.removeEventListener('alana-guardian-session-cleared', handleSessionCleared);
@@ -154,22 +153,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw error;
     }
   }, [address, onChainRole, signMessageAsync]);
-
-  useEffect(() => {
-    if (!address || onChainRole !== 'guardian') {
-      autoAuthorizationAttempt.current = null;
-      return;
-    }
-    if (
-      guardianSessionStatus !== 'idle' ||
-      autoAuthorizationAttempt.current === address
-    ) {
-      return;
-    }
-
-    autoAuthorizationAttempt.current = address;
-    authorizeGuardian().catch(() => undefined);
-  }, [address, authorizeGuardian, guardianSessionStatus, onChainRole]);
 
   return (
     <AuthContext.Provider

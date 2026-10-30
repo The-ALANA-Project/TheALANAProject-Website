@@ -92,7 +92,7 @@ function HeroText({ post, onClick }: { post: BlogPost; onClick: () => void }) {
           <span className="font-mono text-xs text-muted-foreground">·</span>
           <span className="font-mono text-xs text-muted-foreground">{post.readingTimeMin} min read</span>
         </div>
-        <h2 className="font-sans font-semibold text-2xl md:text-3xl leading-snug group-hover:text-accent transition-colors">
+        <h2 className="font-sans text-2xl font-medium leading-normal transition-colors group-hover:text-accent">
           {post.title}
         </h2>
       </div>
@@ -106,56 +106,32 @@ function HeroText({ post, onClick }: { post: BlogPost; onClick: () => void }) {
   );
 }
 
-// ── Search + Filter Bar ────────────────────────────────────────────────────
+// ── Search Bar ─────────────────────────────────────────────────────────────
 function FilterBar({
-  categories,
-  activeCategory,
   searchQuery,
-  onCategory,
   onSearch,
   onRefresh,
 }: {
-  categories: string[];
-  activeCategory: string | null;
   searchQuery: string;
-  onCategory: (cat: string | null) => void;
   onSearch: (q: string) => void;
   onRefresh: () => void;
 }) {
   return (
-    <div className="flex gap-3 items-stretch">
-      {/* Search input */}
-      <div className="flex-1 flex items-center gap-2.5 px-4 border border-foreground rounded-[4px]">
-        <Search size={13} className="text-muted-foreground shrink-0" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => onSearch(e.target.value)}
-          placeholder="Search articles…"
-          className="flex-1 font-mono text-xs py-3 bg-transparent placeholder:text-muted-foreground focus:outline-none"
-        />
-        <div
-          onClick={onRefresh}
-          title="Refresh articles"
-          className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors shrink-0"
-        >
-          <RefreshCw size={13} />
-        </div>
-      </div>
-
-      {/* Category dropdown */}
-      <div className="relative flex items-center border border-foreground rounded-[4px]">
-        <select
-          value={activeCategory ?? ''}
-          onChange={(e) => onCategory(e.target.value || null)}
-          className="appearance-none font-mono text-xs pl-4 pr-9 py-3 bg-transparent text-foreground focus:outline-none cursor-pointer"
-        >
-          <option value="">All topics</option>
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
-        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-foreground text-[9px]">▾</span>
+    <div className="flex w-full items-center gap-2.5 rounded-[4px] border border-foreground px-4">
+      <Search size={13} className="shrink-0 text-muted-foreground" />
+      <input
+        type="text"
+        value={searchQuery}
+        onChange={(e) => onSearch(e.target.value)}
+        placeholder="Search articles…"
+        className="min-w-0 flex-1 bg-transparent py-3 font-mono text-xs placeholder:text-muted-foreground focus:outline-none"
+      />
+      <div
+        onClick={onRefresh}
+        title="Refresh articles"
+        className="shrink-0 cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <RefreshCw size={13} />
       </div>
     </div>
   );
@@ -171,7 +147,6 @@ export function BlogPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   async function load(force = false) {
@@ -201,26 +176,17 @@ export function BlogPage() {
   const featured = heroGuid ? sortedPosts.find(p => p.guid === heroGuid) ?? null : null;
   const rest = sortedPosts.filter(p => p.guid !== heroGuid);
 
-  const categories = useMemo(
-    () => [...new Set(rest.flatMap((p) => p.categories))].sort(),
-    [rest],
-  );
-
   const filteredRest = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return rest.filter((post) => {
-      const matchesSearch =
-        !q ||
-        post.title.toLowerCase().includes(q) ||
-        post.excerpt.toLowerCase().includes(q) ||
-        post.author.toLowerCase().includes(q);
-      const matchesCategory =
-        activeCategory === null || post.categories.includes(activeCategory);
-      return matchesSearch && matchesCategory;
-    });
-  }, [rest, searchQuery, activeCategory]);
+    return rest.filter((post) =>
+      !q ||
+      post.title.toLowerCase().includes(q) ||
+      post.excerpt.toLowerCase().includes(q) ||
+      post.author.toLowerCase().includes(q)
+    );
+  }, [rest, searchQuery]);
 
-  useEffect(() => { setCurrentPage(1); }, [searchQuery, activeCategory]);
+  useEffect(() => { setCurrentPage(1); }, [searchQuery]);
 
   const totalPages = Math.ceil(filteredRest.length / POSTS_PER_PAGE);
   const pagedPosts = filteredRest.slice(
@@ -293,10 +259,7 @@ export function BlogPage() {
             {rest.length > 0 && (
               <>
                 <FilterBar
-                  categories={categories}
-                  activeCategory={activeCategory}
                   searchQuery={searchQuery}
-                  onCategory={setActiveCategory}
                   onSearch={setSearchQuery}
                   onRefresh={() => load(true)}
                 />

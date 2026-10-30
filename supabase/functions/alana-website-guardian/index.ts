@@ -3,6 +3,8 @@ import { withSupabase } from "jsr:@supabase/server@^1";
 import { Hono } from "npm:hono";
 import { logger } from "npm:hono/logger";
 import { createClient } from "jsr:@supabase/supabase-js@2.49.8";
+import { load } from "npm:cheerio@1.1.2";
+import sanitizeHtml from "npm:sanitize-html@2.17.0";
 import {
   createPublicClient,
   http,
@@ -15,6 +17,7 @@ const SESSION_MINUTES = 30;
 const NONCE_MINUTES = 5;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const PARAGRAPH_CACHE_MS = 5 * 60_000;
+const PARAGRAPH_CONTENT_CACHE_MS = 15 * 60_000;
 const PARAGRAPH_MAX_PAGES = 20;
 const PARAGRAPH_POSTS_URL =
   "https://public.api.paragraph.com/api/v1/posts?publicationSlug=the-alana-project";
@@ -24,6 +27,38 @@ let paragraphPostsCache: {
   expiresAt: number;
 } | null = null;
 let paragraphPostsRequest: Promise<Record<string, unknown>[]> | null = null;
+const paragraphContentCache = new Map<string, {
+  contentHtml: string;
+  expiresAt: number;
+}>();
+
+interface ParagraphPreviewCard {
+  url: string;
+  imageUrl: string;
+  title: string;
+}
+
+function extractParagraphPreviewCards(html: string): ParagraphPreviewCard[] {
+  const cards: ParagraphPreviewCard[] = [];
+  const pattern =
+    /\\"href\\":\\"(https:\/\/paragraph\.com\/@the-alana-project\/[^\\"]+)\\"[\s\S]{0,900}?\\"coverImg\\":\{\\"src\\":\\"([^\\"]+)\\"[\s\S]{0,500}?\\"text\\":\\"([\s\S]*?)\\",\\"priority\\":/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(html)) !== null) {
+    if (cards.some((card) => card.url === match![1])) continue;
+    try {
+      cards.push({
+        url: match[1],
+        imageUrl: match[2],
+        title: JSON.parse(`"${match[3]}"`),
+      });
+    } catch {
+      // Ignore malformed streamed metadata and remove its loading skeleton below.
+    }
+  }
+
+  return cards;
+}
 
 const paragraphPostFields = [
   "id",
@@ -546,6 +581,121 @@ async function fetchParagraphPosts(): Promise<Record<string, unknown>[]> {
   }
 }
 
+async function fetchParagraphPostContent(slug: string): Promise<string> {
+  if (
+    !slug ||
+    slug.length > 200 ||
+    /[/?#\\]/.test(slug)
+  ) {
+    throw new Error("Invalid article slug");
+  }
+
+  const cached = paragraphContentCache.get(slug);
+  if (cached && cached.expiresAt > Date.now()) return cached.contentHtml;
+
+  const response = await fetch(
+    `https://paragraph.com/@the-alana-project/${encodeURIComponent(slug)}`,
+    {
+      headers: {
+        Accept: "text/html",
+        "User-Agent": "The ALANA Project website",
+      },
+      signal: AbortSignal.timeout(15_000),
+    },
+  );
+  if (!response.ok) throw new Error(`Paragraph article returned ${response.status}`);
+
+  const pageHtml = await response.text();
+  const previewCards = extractParagraphPreviewCards(pageHtml);
+  const $ = load(pageHtml);
+  const article = $(".webrender").first();
+
+  const previewSkeletons = article.find(".not-prose.my-5").filter((_index, element) =>
+    $(element).find(".animate-pulse").length > 0
+  );
+  previewSkeletons.each((index, element) => {
+    const preview = previewCards[index];
+    if (!preview) {
+      $(element).remove();
+      return;
+    }
+
+    const card = $("<a>")
+      .addClass("paragraph-preview-card")
+      .attr({
+        href: preview.url,
+        target: "_blank",
+        rel: "noopener noreferrer",
+      });
+    card.append(
+      $("<img>")
+        .addClass("paragraph-preview-image")
+        .attr({
+          src: preview.imageUrl,
+          alt: "",
+          loading: "lazy",
+        }),
+    );
+
+    const content = $("<span>").addClass("paragraph-preview-content");
+    content.append(
+      $("<span>")
+        .addClass("paragraph-preview-kicker")
+        .text("ALANA's Blog"),
+    );
+    content.append(
+      $("<strong>")
+        .addClass("paragraph-preview-title")
+        .text(preview.title),
+    );
+    content.append(
+      $("<span>")
+        .addClass("paragraph-preview-action")
+        .text("Read on Paragraph →"),
+    );
+    card.append(content);
+    $(element).replaceWith(card);
+  });
+
+  const rawContent = article.html();
+  if (!rawContent) throw new Error("Paragraph article content was not found");
+
+  const contentHtml = sanitizeHtml(rawContent, {
+    allowedTags: [
+      ...sanitizeHtml.defaults.allowedTags,
+      "img",
+      "figure",
+      "figcaption",
+      "video",
+      "source",
+    ],
+    allowedAttributes: {
+      "*": ["class"],
+      a: ["href", "name", "target", "rel"],
+      img: ["src", "alt", "title", "width", "height", "loading"],
+      video: ["src", "poster", "controls", "playsinline"],
+      source: ["src", "type"],
+    },
+    allowedSchemes: ["http", "https", "mailto"],
+    transformTags: {
+      a: (_tagName, attribs) => ({
+        tagName: "a",
+        attribs: {
+          ...attribs,
+          rel: "noopener noreferrer",
+        },
+      }),
+    },
+  });
+  if (!contentHtml.trim()) throw new Error("Paragraph article content was empty");
+
+  paragraphContentCache.set(slug, {
+    contentHtml,
+    expiresAt: Date.now() + PARAGRAPH_CONTENT_CACHE_MS,
+  });
+  return contentHtml;
+}
+
 const app = new Hono();
 app.use("*", logger(console.log));
 
@@ -691,6 +841,17 @@ app.get(`${ROUTE_PREFIX}/public/blog-posts`, async (c) => {
   } catch (error) {
     console.error("Unable to load Paragraph posts", error);
     return jsonError(c, 503, "Blog feed is temporarily unavailable");
+  }
+});
+
+app.get(`${ROUTE_PREFIX}/public/blog-posts/:slug`, async (c) => {
+  try {
+    const contentHtml = await fetchParagraphPostContent(c.req.param("slug"));
+    c.header("Cache-Control", "public, max-age=900, stale-while-revalidate=1800");
+    return c.json({ data: { contentHtml } });
+  } catch (error) {
+    console.error("Unable to load Paragraph article", error);
+    return jsonError(c, 502, "Article content is temporarily unavailable");
   }
 });
 

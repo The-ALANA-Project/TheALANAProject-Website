@@ -1,4 +1,4 @@
-import { fetchPublicResource } from './guardianApi';
+import { fetchPublicItem, fetchPublicResource } from './guardianApi';
 
 const PARAGRAPH_RSS = 'https://api.paragraph.com/blogs/rss/@the-alana-project';
 
@@ -220,6 +220,7 @@ async function fetchSitemapEntries(): Promise<Array<{ url: string; lastmod: stri
 // ── Public API ─────────────────────────────────────────────────────────────
 
 let cache: BlogPost[] | null = null;
+const contentCache = new Map<string, string>();
 
 // Used by both the public index and individual article pages.
 export async function fetchBlogPosts(force = false): Promise<BlogPost[]> {
@@ -296,6 +297,18 @@ async function fetchPostsFromParagraphApi(): Promise<BlogPost[] | null> {
 // Paragraph API → RSS fallback.
 export async function fetchAllBlogPosts(): Promise<BlogPost[]> {
   return fetchBlogPosts(true);
+}
+
+export async function fetchBlogPostContent(slug: string): Promise<string> {
+  const cached = contentCache.get(slug);
+  if (cached) return cached;
+
+  const result = await fetchPublicItem<{ contentHtml: string }>(
+    `blog-posts/${encodeURIComponent(slug)}`,
+  );
+  if (!result.contentHtml.trim()) throw new Error('Article content is unavailable');
+  contentCache.set(slug, result.contentHtml);
+  return result.contentHtml;
 }
 
 export function formatPubDate(dateStr: string): string {

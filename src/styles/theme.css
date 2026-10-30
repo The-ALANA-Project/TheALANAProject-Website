@@ -158,6 +158,14 @@
     font-family: var(--font-sans);
   }
 
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+  }
+
   /* Smooth transitions for all interactive elements */
   button,
   a,

@@ -330,11 +330,11 @@ export function ProductsPage() {
         </div>
       ) : (
         /* ── Mobile stacked layout ────────────────────────────────────────── */
-        <div style={{ background: '#262424' }}>
+        <div className="flex min-h-[calc(100svh-5rem)] flex-col" style={{ background: '#262424' }}>
         {slides.map((slide, i) => {
           const isActive = activeIndex === i;
           return (
-            <div key={slide.num} className="relative min-h-20 overflow-hidden">
+            <div key={slide.num} className="relative min-h-20 flex-1 overflow-hidden">
               {/* Background */}
               <div className="absolute inset-0">
                 {slide.mediaType === 'video' ? (

@@ -14,6 +14,7 @@ import { Seo } from '../components/Seo';
 import { Footer } from '../components/Footer';
 import { siteConfig } from '../config/site';
 import { Button } from '../components/ui/button';
+import { optimizedImageSrcSet, optimizedImageUrl } from '../utils/image';
 
 // ── Shaders ───────────────────────────────────────────────────────────────────
 const AdvancedLensShader = {
@@ -60,6 +61,7 @@ function HudBlock({ label, rows, align }: {
 }
 
 const A_NAMES = new Set(['ALANA001', 'ALANA002', 'ALANA003', 'ALANA004', 'ALANA005']);
+const KNOWLEDGE_MODEL_URL = `${import.meta.env.BASE_URL}models/knowledge-hub.glb`;
 const ONBOARDING_QUIZZES = [
   {
     id: 'web3',
@@ -188,13 +190,14 @@ export function KnowledgeHubPage() {
     let mixerRef: THREE.AnimationMixer | null = null;
     const loader = new GLTFLoader();
     loader.load(
-      'https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeihh6oby3kdyppgxyil5qba2xqmt6q4hndrnnqxpkwwhlsy5ph6nfy',
+      KNOWLEDGE_MODEL_URL,
       (gltf) => {
         const model = gltf.scene;
         const box = new THREE.Box3().setFromObject(model);
         const size = box.getSize(new THREE.Vector3());
         const centre = box.getCenter(new THREE.Vector3());
-        const scale = 7.0 / Math.max(size.x, size.y, size.z);
+        const targetSize = container.clientWidth < 768 ? 4.6 : 5.5;
+        const scale = targetSize / Math.max(size.x, size.y, size.z);
         model.scale.setScalar(scale);
         model.position.sub(centre.multiplyScalar(scale));
         model.rotation.x = Math.PI / 4;
@@ -425,7 +428,7 @@ export function KnowledgeHubPage() {
           <div className="relative mx-auto flex h-full w-full max-w-6xl flex-col justify-between px-8 pb-10 pt-10 md:px-16">
           {/* Title — upper left */}
           <div className="flex flex-col items-start gap-2 pointer-events-none select-none">
-            <h1 style={{ color: '#F3F3F3', margin: 0 }}>Knowledge HUB</h1>
+            <h1 className="m-0 font-sans text-2xl font-medium leading-normal text-background">Knowledge HUB</h1>
             <span className="block font-sans text-[20px] uppercase tracking-widest mt-1" style={{ color: 'rgba(243,243,243,0.55)' }}>
               LEARN — CREATE — BUILD
             </span>
@@ -481,7 +484,6 @@ export function KnowledgeHubPage() {
 
       {/* Off-white content sections */}
       <div id="knowledge-content" className="bg-background">
-
         {/* ── Knowledge Challenges ── */}
         <section className="w-full max-w-6xl mx-auto px-8 md:px-16 py-14">
           <h2 className="mb-3">Knowledge Challenges</h2>
@@ -489,18 +491,24 @@ export function KnowledgeHubPage() {
             Test your knowledge of Web3, AI, cybersecurity, open source, creativity, and more. Complete each challenge successfully to earn a blockchain-verified badge.
           </p>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div
+            className="-mr-8 flex snap-x snap-mandatory gap-5 overflow-x-auto pr-8 pb-4 md:mr-0 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:pr-0 md:pb-0"
+            style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(38,36,36,0.2) transparent' }}
+          >
             {ONBOARDING_QUIZZES.map(quiz => (
               <article
                 key={quiz.id}
-                className="group flex min-w-0 flex-col overflow-hidden rounded-[8px] border border-foreground bg-background transition-colors hover:border-accent"
+                className="group flex w-[calc(100%-2rem)] shrink-0 snap-start flex-col overflow-hidden rounded-[8px] border border-foreground bg-background transition-colors hover:border-accent md:w-auto"
               >
                 <div className="relative aspect-square w-full overflow-hidden border-b border-foreground bg-foreground">
                   <img
-                    src={quiz.badgeImage}
+                    src={optimizedImageUrl(quiz.badgeImage, 640)}
+                    srcSet={optimizedImageSrcSet(quiz.badgeImage, [320, 480, 640])}
+                    sizes="(max-width: 767px) calc(100vw - 4rem), 320px"
                     alt={`${quiz.title} badge`}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
+                    decoding="async"
                   />
                   {!quiz.available && (
                     <span className="absolute right-4 top-4 rounded-full border border-white/30 bg-white/10 px-3 py-1 font-mono text-[9px] uppercase tracking-widest text-white backdrop-blur-sm">
@@ -672,7 +680,7 @@ export function KnowledgeHubPage() {
           <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-700 group-hover:scale-105"
             style={{
-              backgroundImage: `url(https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeido2glqw574c5kxquhgythghbnchqibzbvvr6exxshlfve5ldsnd4)`,
+              backgroundImage: `url(${optimizedImageUrl('https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeido2glqw574c5kxquhgythghbnchqibzbvvr6exxshlfve5ldsnd4', 1920)})`,
               mixBlendMode: 'luminosity',
               opacity: 0.6,
             }}

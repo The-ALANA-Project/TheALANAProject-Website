@@ -6,5 +6,14 @@
   "accessibility": {
     "addBypassLinks": false,
     "ignoreReducedMotion": false
+  },
+  "icons": {
+    "icon": "https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeiapuwp5qvwn2bm42vkqzhfij2oegdguy3kzprdxu5g3oazlyuurma/ALANA%20Image%20Mark%20-%20Black%20on%20White.png"
+  },
+  "analytics": {
+    "googleAnalyticsId": "G-MGL3F4DDC0"
+  },
+  "customScripts": {
+    "headStart": "<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}var alanaConsent='declined';try{alanaConsent=localStorage.getItem('alana-cookie-consent')||'declined'}catch(e){}gtag('consent','default',{analytics_storage:alanaConsent==='accepted'?'granted':'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',wait_for_update:500});</script>"
   }
 }

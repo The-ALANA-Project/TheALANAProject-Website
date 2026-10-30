@@ -1,42 +1,43 @@
 import { useNavigate } from 'react-router';
 import { SpaceGradient } from '../components/SpaceGradient';
 import { Footer } from '../components/Footer';
+import { Button } from '../components/ui/button';
 
 export function HomePage() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex min-h-[calc(100svh-5rem)] flex-1 flex-col">
       {/* Hero */}
-      <section className="flex-1 w-full flex flex-col">
-        <div className="relative flex-1 overflow-hidden">
+      <section className="flex w-full flex-1 flex-col">
+        <div className="relative flex min-h-[36rem] flex-1 overflow-hidden sm:min-h-[32rem]">
           <SpaceGradient />
 
-          <div className="relative z-10 flex items-center h-full">
-            <div className="max-w-6xl mx-auto px-8 md:px-16 w-full pt-[150px]">
-              <div className="space-y-8 max-w-3xl">
+          <div className="relative z-10 flex w-full items-center py-16">
+            <div className="mx-auto w-full max-w-6xl px-8 md:px-16">
+              <div className="mx-auto flex max-w-3xl flex-col items-center space-y-8 sm:mx-0 sm:items-start">
                 <div className="space-y-4">
-                  <h1 className="text-4xl md:text-6xl font-medium text-white text-left">
+                  <h1 className="text-center font-medium text-white sm:text-left">
                     We empower Creators by guiding them into a world of novel technologies.
                   </h1>
-                  <p className="text-lg md:text-xl text-left max-w-2xl font-normal text-[#F3F3F3]/90">
+                  <p className="mx-auto max-w-2xl text-center text-lg font-normal text-background/90 sm:mx-0 sm:text-left md:text-xl">
                     We invite you on a journey outside the ordinary with the support of the ALANA community.
                   </p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-4 justify-start items-start">
-                  <button
+                <div className="flex w-full max-w-sm flex-col items-stretch justify-start gap-4 sm:max-w-none sm:flex-row sm:items-start">
+                  <Button
                     onClick={() => navigate('/knowledge-hub')}
-                    className="inline-flex items-center justify-center px-6 h-11 font-sans text-sm font-medium bg-accent text-[#262424] backdrop-blur-sm border border-accent shadow-lg rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] transition-all duration-300 hover:bg-[#262424] hover:text-accent hover:border-accent"
+                    className="h-11 w-full rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] border border-accent bg-accent px-6 font-sans text-sm font-medium text-accent-foreground shadow-lg backdrop-blur-sm hover:border-accent hover:bg-foreground hover:text-accent sm:w-auto"
                   >
                     Visit the Knowledge HUB
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => navigate('/products')}
-                    className="inline-flex items-center justify-center px-6 h-11 font-sans text-sm font-medium text-white bg-white/5 backdrop-blur-sm border border-white/30 rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] transition-all duration-300 hover:bg-white/5 hover:border-accent hover:text-accent"
+                    className="h-11 w-full rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] border border-background/30 bg-background/5 px-6 font-sans text-sm font-medium text-background backdrop-blur-sm hover:border-accent hover:bg-background/5 hover:text-accent sm:w-auto"
                   >
                     Explore Our Products
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
