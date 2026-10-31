@@ -2,6 +2,7 @@ import { useLayoutEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 import { SideShelfMenu } from './SideShelfMenu';
 import { CookieConsent } from './CookieConsent';
+import { GoogleAnalytics } from './GoogleAnalytics';
 import { Toaster } from 'sonner';
 import { SidebarSimple, X } from '@phosphor-icons/react';
 
@@ -74,6 +75,7 @@ export function AppLayout() {
       </main>
 
       <CookieConsent />
+      <GoogleAnalytics />
 
 {/* ── Toast Notifications ─────────────────────────────────────────── */}
       <Toaster />

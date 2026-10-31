@@ -3,23 +3,19 @@ import { Link, useLocation } from "react-router"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { Button } from "./ui/button"
 import { HOME_INTRO_COMPLETE_EVENT } from "../config/events"
-
-const CONSENT_STORAGE_KEY = "alana-cookie-consent"
+import {
+  ANALYTICS_CONSENT_STORAGE_KEY,
+  sendAnalyticsPageView,
+} from "../utils/analytics"
 
 type ConsentChoice = "accepted" | "declined"
-
-declare global {
-  interface Window {
-    gtag?: (...args: unknown[]) => void
-  }
-}
 
 export function CookieConsent() {
   const location = useLocation()
   const shouldReduceMotion = useReducedMotion()
   const [needsConsent, setNeedsConsent] = useState(() => {
     try {
-      return localStorage.getItem(CONSENT_STORAGE_KEY) === null
+      return localStorage.getItem(ANALYTICS_CONSENT_STORAGE_KEY) === null
     } catch {
       return true
     }
@@ -41,7 +37,7 @@ export function CookieConsent() {
 
   const saveChoice = (choice: ConsentChoice) => {
     try {
-      localStorage.setItem(CONSENT_STORAGE_KEY, choice)
+      localStorage.setItem(ANALYTICS_CONSENT_STORAGE_KEY, choice)
     } catch {
       // Consent still applies for the current page when storage is unavailable.
     }
@@ -55,10 +51,7 @@ export function CookieConsent() {
     })
 
     if (granted) {
-      window.gtag?.("event", "page_view", {
-        page_location: window.location.href,
-        page_title: document.title,
-      })
+      sendAnalyticsPageView()
     }
 
     setNeedsConsent(false)
