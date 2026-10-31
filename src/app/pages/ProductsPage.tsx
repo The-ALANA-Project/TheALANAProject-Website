@@ -1,11 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Minus, Plus } from 'lucide-react';
 import { Seo } from '../components/Seo';
 import alanaBoutiqueImage from '../../assets/products/alana-boutique.webp';
 import alanaWorldImage from '../../assets/products/alana-world.webp';
 
-function ProductVideo({ src, isActive }: { src: string; isActive: boolean }) {
+function ProductVideo({
+  src,
+  isActive,
+  onReady,
+}: {
+  src: string;
+  isActive: boolean;
+  onReady: () => void;
+}) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -28,7 +36,9 @@ function ProductVideo({ src, isActive }: { src: string; isActive: boolean }) {
       loop
       muted
       playsInline
-      preload="metadata"
+      preload="auto"
+      onLoadedData={onReady}
+      onError={onReady}
       className="h-full w-full object-cover"
     />
   );
@@ -77,7 +87,7 @@ const slides = [
       'At FABAstudio™, we bring the best open-source creative tools into one canvas that works the way you want to work.',
     mediaType: 'image' as const,
     mediaSrc:
-      'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=1600&q=85',
+      'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=1600&q=75',
     specs: [
       { label: 'Type', value: 'Creative HUB' },
       { label: 'Frequency', value: 'Ongoing' },
@@ -103,12 +113,69 @@ const slides = [
   },
 ];
 
+function ProductMedia({
+  slide,
+  isActive,
+  onReady,
+}: {
+  slide: (typeof slides)[number];
+  isActive: boolean;
+  onReady: () => void;
+}) {
+  if (slide.mediaType === 'video') {
+    return <ProductVideo src={slide.mediaSrc} isActive={isActive} onReady={onReady} />;
+  }
+
+  function handleLoad(event: React.SyntheticEvent<HTMLImageElement>) {
+    const image = event.currentTarget;
+    void image.decode().catch(() => undefined).finally(onReady);
+  }
+
+  return (
+    <img
+      src={slide.mediaSrc}
+      alt={slide.title}
+      className="h-full w-full object-cover"
+      loading="eager"
+      decoding="async"
+      fetchPriority={slide.num === '02' ? 'high' : 'auto'}
+      onLoad={handleLoad}
+      onError={onReady}
+    />
+  );
+}
+
 export function ProductsPage() {
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [readyMedia, setReadyMedia] = useState(() => slides.map(() => false));
+  const [revealedCount, setRevealedCount] = useState(0);
   const [isDesktop, setIsDesktop] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches,
   );
   const shouldReduceMotion = useReducedMotion();
+
+  const markMediaReady = useCallback((index: number) => {
+    setReadyMedia(current => {
+      if (current[index]) return current;
+      const next = [...current];
+      next[index] = true;
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (shouldReduceMotion) {
+      setRevealedCount(slides.length);
+      return;
+    }
+    if (revealedCount >= slides.length || !readyMedia[revealedCount]) return;
+
+    const timeout = window.setTimeout(
+      () => setRevealedCount(current => Math.min(current + 1, slides.length)),
+      revealedCount === 0 ? 0 : 140,
+    );
+    return () => window.clearTimeout(timeout);
+  }, [readyMedia, revealedCount, shouldReduceMotion]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 768px)');
@@ -155,6 +222,7 @@ export function ProductsPage() {
         {slides.map((slide, i) => {
           const isActive = activeIndex === i;
           const isAny = activeIndex !== -1;
+          const isRevealed = i < revealedCount;
 
           return (
             <motion.div
@@ -162,28 +230,33 @@ export function ProductsPage() {
               onClick={() => toggle(i)}
               className="relative overflow-hidden cursor-pointer group"
               initial={false}
-              animate={{ flexGrow: isActive ? 5 : 1 }}
+              animate={{
+                flexGrow: isActive ? 5 : 1,
+                opacity: isRevealed ? 1 : 0,
+                x: isRevealed ? 0 : 40,
+              }}
               transition={
                 shouldReduceMotion
                   ? { duration: 0 }
-                  : { type: 'spring', stiffness: 320, damping: 34, mass: 0.7 }
+                  : {
+                      flexGrow: { type: 'spring', stiffness: 320, damping: 34, mass: 0.7 },
+                      opacity: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+                      x: { duration: 0.48, ease: [0.16, 1, 0.3, 1] },
+                    }
               }
               style={{
                 flexBasis: 0,
                 flexShrink: 1,
+                pointerEvents: isRevealed ? 'auto' : 'none',
               }}
             >
               {/* Background media */}
               <div className="absolute inset-0">
-                {slide.mediaType === 'video' ? (
-                  <ProductVideo src={slide.mediaSrc} isActive={isActive} />
-                ) : (
-                  <img
-                    src={slide.mediaSrc}
-                    alt={slide.title}
-                    className="w-full h-full object-cover"
-                  />
-                )}
+                <ProductMedia
+                  slide={slide}
+                  isActive={isActive}
+                  onReady={() => markMediaReady(i)}
+                />
               </div>
 
               {/* A composited dimmer avoids repainting full-screen media filters during resize. */}
@@ -333,15 +406,33 @@ export function ProductsPage() {
         <div className="flex min-h-[calc(100svh-5rem)] flex-col" style={{ background: '#262424' }}>
         {slides.map((slide, i) => {
           const isActive = activeIndex === i;
+          const isRevealed = i < revealedCount;
           return (
-            <div key={slide.num} className="relative min-h-20 flex-1 overflow-hidden">
+            <motion.div
+              key={slide.num}
+              className="relative min-h-20 flex-1 overflow-hidden"
+              initial={false}
+              animate={{
+                opacity: isRevealed ? 1 : 0,
+                y: isRevealed ? 0 : 24,
+              }}
+              transition={
+                shouldReduceMotion
+                  ? { duration: 0 }
+                  : {
+                      opacity: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+                      y: { duration: 0.48, ease: [0.16, 1, 0.3, 1] },
+                    }
+              }
+              style={{ pointerEvents: isRevealed ? 'auto' : 'none' }}
+            >
               {/* Background */}
               <div className="absolute inset-0">
-                {slide.mediaType === 'video' ? (
-                  <ProductVideo src={slide.mediaSrc} isActive={isActive} />
-                ) : (
-                  <img src={slide.mediaSrc} alt={slide.title} className="w-full h-full object-cover" />
-                )}
+                <ProductMedia
+                  slide={slide}
+                  isActive={isActive}
+                  onReady={() => markMediaReady(i)}
+                />
               </div>
               <div
                 className={`pointer-events-none absolute inset-0 bg-black transition-opacity duration-200 motion-reduce:duration-0 ${
@@ -417,7 +508,7 @@ export function ProductsPage() {
                   )}
                 </div>
               </motion.div>
-            </div>
+            </motion.div>
           );
         })}
         </div>

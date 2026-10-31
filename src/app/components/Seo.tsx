@@ -5,7 +5,7 @@ const SITE_URL = 'https://the-alana-project.xyz';
 const DEFAULT_DESCRIPTION =
   'A decentralised community project building the future of collaborative contribution. Join us, earn $ALANA, and help shape what comes next.';
 const DEFAULT_IMAGE =
-  'https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeic2t2wzdzj7uing33sshx6ygvj76ci77gfbx3txetwgbmuh6civqy';
+  'https://pink-quick-lizard-297.mypinata.cloud/ipfs/bafybeic2t2wzdzj7uing33sshx6ygvj76ci77gfbx3txetwgbmuh6civqy?v=2';
 
 interface SeoProps {
   /** Page title — SITE_NAME is appended automatically */

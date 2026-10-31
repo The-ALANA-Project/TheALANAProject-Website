@@ -238,7 +238,13 @@ type FigmaSiteConfiguration = {
   language?: string
   robots?: { index?: boolean }
   icons?: { icon?: string }
-  openGraph?: { image?: string }
+  openGraph?: {
+    image?: string
+    imageAlt?: string
+    imageType?: string
+    imageWidth?: number
+    imageHeight?: number
+  }
   analytics?: { googleAnalyticsId?: string }
   customScripts?: {
     headStart?: string
@@ -335,6 +341,45 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
             },
             {
               tag: 'meta',
+              attrs: { property: 'og:image:secure_url', content: socialImage },
+              injectTo: 'head',
+            },
+            ...(config.openGraph?.imageType
+              ? [{
+                  tag: 'meta',
+                  attrs: { property: 'og:image:type', content: config.openGraph.imageType },
+                  injectTo: 'head',
+                } satisfies HtmlTagDescriptor]
+              : []),
+            ...(config.openGraph?.imageWidth
+              ? [{
+                  tag: 'meta',
+                  attrs: {
+                    property: 'og:image:width',
+                    content: String(config.openGraph.imageWidth),
+                  },
+                  injectTo: 'head',
+                } satisfies HtmlTagDescriptor]
+              : []),
+            ...(config.openGraph?.imageHeight
+              ? [{
+                  tag: 'meta',
+                  attrs: {
+                    property: 'og:image:height',
+                    content: String(config.openGraph.imageHeight),
+                  },
+                  injectTo: 'head',
+                } satisfies HtmlTagDescriptor]
+              : []),
+            ...(config.openGraph?.imageAlt
+              ? [{
+                  tag: 'meta',
+                  attrs: { property: 'og:image:alt', content: config.openGraph.imageAlt },
+                  injectTo: 'head',
+                } satisfies HtmlTagDescriptor]
+              : []),
+            {
+              tag: 'meta',
               attrs: { name: 'twitter:card', content: 'summary_large_image' },
               injectTo: 'head',
             },
@@ -343,6 +388,13 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
               attrs: { name: 'twitter:image', content: socialImage },
               injectTo: 'head',
             },
+            ...(config.openGraph?.imageAlt
+              ? [{
+                  tag: 'meta',
+                  attrs: { name: 'twitter:image:alt', content: config.openGraph.imageAlt },
+                  injectTo: 'head',
+                } satisfies HtmlTagDescriptor]
+              : []),
           )
         if (googleAnalyticsId) {
           tags.push(
