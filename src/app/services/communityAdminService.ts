@@ -131,8 +131,13 @@ export async function upsertCommunityMember(
   member: Omit<CommunityMember, 'id'> & { id?: string },
 ): Promise<{ data: CommunityMember | null; error: string | null }> {
   try {
+    const normalizedMember = {
+      ...member,
+      wallet_address: member.wallet_address.trim(),
+      skills: member.skills.map(skill => skill.trim()).filter(Boolean),
+    };
     return {
-      data: await mutateGuardianResource<CommunityMember>('upsert', 'members', member),
+      data: await mutateGuardianResource<CommunityMember>('upsert', 'members', normalizedMember),
       error: null,
     };
   } catch (error) {

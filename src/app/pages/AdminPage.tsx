@@ -529,7 +529,17 @@ function MemberForm({
 
   function handleSubmit() {
     if (!form.name.trim()) { toast.error('Name is required'); return; }
-    onSave({ ...form, team: selectedBranches.join(', '), skills });
+    const pendingSkill = skillInput.trim();
+    const submittedSkills =
+      pendingSkill && skills.length < 3 && !skills.includes(pendingSkill)
+        ? [...skills, pendingSkill]
+        : skills;
+    onSave({
+      ...form,
+      wallet_address: form.wallet_address.trim(),
+      team: selectedBranches.join(', '),
+      skills: submittedSkills,
+    });
   }
 
   const field = 'font-sans text-sm bg-transparent border-b border-foreground/20 focus:border-foreground outline-none pb-0.5 w-full transition-colors';

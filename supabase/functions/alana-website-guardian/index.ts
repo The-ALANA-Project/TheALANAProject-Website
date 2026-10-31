@@ -415,8 +415,13 @@ function sanitizePayload(
       if (field.includes("url") && value && !validateUrl(value)) {
         throw new Error(`${field} must be an HTTP or HTTPS URL`);
       }
-      if (field === "wallet_address" && value && !isWalletAddress(value)) {
-        throw new Error("Invalid wallet address");
+      if (field === "wallet_address") {
+        const walletAddress = value.trim();
+        if (walletAddress && !isWalletAddress(walletAddress)) {
+          throw new Error("Invalid wallet address");
+        }
+        clean[field] = walletAddress.toLowerCase();
+        continue;
       }
       if (
         field === "category" &&
