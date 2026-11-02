@@ -177,7 +177,7 @@ function MemberCard({ member }: { member: Member }) {
           <img
             src={member.imageUrl}
             alt={member.name}
-            className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]"
+            className="h-full w-full grayscale object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]"
             loading="lazy"
           />
         ) : (
