@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { ArrowClockwise, Eye, EyeSlash, PencilSimple, PushPin, Trash, X as XIcon } from '@phosphor-icons/react';
 import { Footer } from '../components/Footer';
 import { Button } from '../components/ui/button';
+import { Seo } from '../components/Seo';
 import { fetchAllBlogPosts, formatPubDate, type BlogPost } from '../services/blogService';
 import {
   fetchCurations,
@@ -1696,14 +1697,17 @@ export function AdminPage() {
 
   if (role !== 'guardian') {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center px-8">
-        <div className="text-center space-y-4 max-w-md">
-          <h2 className="text-2xl font-sans">Nucleus Guardians Only</h2>
-          <p className="text-muted-foreground">
-            This panel is restricted to Nucleus Guardian NFT holders.
-          </p>
+      <>
+        <Seo title="Guardian Panel" path="/admin" noIndex />
+        <div className="min-h-[70vh] flex items-center justify-center px-8">
+          <div className="text-center space-y-4 max-w-md">
+            <h2 className="text-2xl font-sans">Nucleus Guardians Only</h2>
+            <p className="text-muted-foreground">
+              This panel is restricted to Nucleus Guardian NFT holders.
+            </p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -1712,36 +1716,39 @@ export function AdminPage() {
       guardianSessionStatus === 'checking' || guardianSessionStatus === 'authorizing';
 
     return (
-      <div className="min-h-[70vh] flex items-center justify-center px-8">
-        <div className="w-full max-w-md space-y-5 rounded-[4px] border border-foreground bg-background/70 p-8 text-center shadow-lg backdrop-blur-xl">
-          <div className="space-y-2">
-            <h2 className="text-2xl font-sans">Authorize Guardian Panel</h2>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              Sign a message with your connected wallet. The server will confirm that your
-              Nucleus Guardian membership is active on Optimism before granting access.
+      <>
+        <Seo title="Guardian Panel" path="/admin" noIndex />
+        <div className="min-h-[70vh] flex items-center justify-center px-8">
+          <div className="w-full max-w-md space-y-5 rounded-[4px] border border-foreground bg-background/70 p-8 text-center shadow-lg backdrop-blur-xl">
+            <div className="space-y-2">
+              <h2 className="text-2xl font-sans">Authorize Guardian Panel</h2>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Sign a message with your connected wallet. The server will confirm that your
+                Nucleus Guardian membership is active on Optimism before granting access.
+              </p>
+            </div>
+            <Button
+              type="button"
+              size="lg"
+              disabled={busy}
+              onClick={() => authorizeGuardian().catch(() => undefined)}
+              className="h-11 w-full rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] border border-accent bg-accent px-6 text-accent-foreground shadow-lg hover:bg-foreground hover:text-accent"
+            >
+              {busy
+                ? 'Verifying membership…'
+                : guardianSessionStatus === 'error'
+                ? 'Reconnect Guardian Session'
+                : 'Sign in as Guardian'}
+            </Button>
+            {guardianSessionError && (
+              <p className="font-mono text-xs text-destructive">{guardianSessionError}</p>
+            )}
+            <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              Signing is free and does not create a transaction.
             </p>
           </div>
-          <Button
-            type="button"
-            size="lg"
-            disabled={busy}
-            onClick={() => authorizeGuardian().catch(() => undefined)}
-            className="h-11 w-full rounded-tl-[4px] rounded-tr-none rounded-br-[24px] rounded-bl-[4px] border border-accent bg-accent px-6 text-accent-foreground shadow-lg hover:bg-foreground hover:text-accent"
-          >
-            {busy
-              ? 'Verifying membership…'
-              : guardianSessionStatus === 'error'
-              ? 'Reconnect Guardian Session'
-              : 'Sign in as Guardian'}
-          </Button>
-          {guardianSessionError && (
-            <p className="font-mono text-xs text-destructive">{guardianSessionError}</p>
-          )}
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            Signing is free and does not create a transaction.
-          </p>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -1753,6 +1760,7 @@ export function AdminPage() {
 
   return (
     <>
+      <Seo title="Guardian Panel" path="/admin" noIndex />
       <div className="w-full max-w-6xl mx-auto px-8 md:px-16 py-16">
         <div className="space-y-8">
           {/* Header */}

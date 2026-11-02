@@ -21,6 +21,8 @@ interface SeoProps {
   author?: string;
   /** Article-specific: ISO 8601 publish date */
   publishedTime?: string;
+  /** Prevent indexing for private or non-content routes. */
+  noIndex?: boolean;
 }
 
 export function Seo({
@@ -31,6 +33,7 @@ export function Seo({
   type = 'website',
   author,
   publishedTime,
+  noIndex = false,
 }: SeoProps) {
   const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
   const canonical = `${SITE_URL}${path}`;
@@ -41,6 +44,7 @@ export function Seo({
       {/* Primary */}
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
+      {noIndex && <meta name="robots" content="noindex, nofollow" />}
       <link rel="canonical" href={canonical} />
 
       {/* Open Graph */}

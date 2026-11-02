@@ -12,6 +12,7 @@ import { TermsPage } from './pages/TermsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { PressKitPage } from './pages/PressKitPage';
 import { AdminPage } from './pages/AdminPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 
 export const router = createBrowserRouter([
   {
@@ -37,7 +38,7 @@ export const router = createBrowserRouter([
       { path: 'admin',            Component: AdminPage },
 
       // ── Fallback ─────────────────────────────────────────────────────
-      { path: '*',                Component: HomePage },
+      { path: '*',                Component: NotFoundPage },
     ],
   },
 ]);

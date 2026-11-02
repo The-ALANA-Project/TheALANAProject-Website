@@ -6,6 +6,7 @@ import { Footer } from "../components/Footer"
 import { Button } from "../components/ui/button"
 import { HeroScrambleHeading } from "../components/HeroScrambleHeading"
 import { HOME_INTRO_COMPLETE_EVENT } from "../config/events"
+import { Seo } from "../components/Seo"
 
 type IntroStage = "heading" | "description" | "buttons" | "complete"
 
@@ -49,9 +50,11 @@ export function HomePage() {
     : { duration: 0.55, ease: [0.22, 1, 0.36, 1] as const }
 
   return (
-    <div className="flex min-h-[calc(100svh-5rem)] flex-1 flex-col">
-      {/* Hero */}
-      <section className="flex w-full flex-1 flex-col">
+    <>
+      <Seo path="/" />
+      <div className="flex min-h-[calc(100svh-5rem)] flex-1 flex-col">
+        {/* Hero */}
+        <section className="flex w-full flex-1 flex-col">
         <div className="relative flex min-h-[36rem] flex-1 overflow-hidden sm:min-h-[32rem]">
           <SpaceGradient />
 
@@ -108,9 +111,10 @@ export function HomePage() {
             </div>
           </div>
         </div>
-      </section>
+        </section>
 
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </>
   )
 }
