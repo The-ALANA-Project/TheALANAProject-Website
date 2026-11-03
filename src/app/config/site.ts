@@ -1,6 +1,6 @@
 export const siteConfig = {
   description:
-    'The ALANA Project is a decentralised, community-driven initiative that rewards meaningful contribution. Through NFT-gated roles, token incentives, and an open governance model, ALANA empowers its members to build together and share in the value they create.',
+    'A community-governed ecosystem advancing creator sovereignty through emerging technologies, shared knowledge, practical tools, and collaboration.',
 
   // ── Contact & Legal ───────────────────────────────────────────────────────
   contactEmail: 'contact@the-alana-project.xyz',
